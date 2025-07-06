@@ -1,0 +1,121 @@
+# Drug Discovery Model Configuration
+
+# Graph Neural Network Models
+gnn:
+  # Graph Convolutional Network
+  gcn:
+    hidden_dim: 128
+    num_layers: 3
+    dropout: 0.2
+    activation: "relu"
+    
+  # Graph Attention Network
+  gat:
+    hidden_dim: 128
+    num_heads: 8
+    num_layers: 3
+    dropout: 0.2
+    attention_dropout: 0.1
+    
+  # Graph Isomorphism Network
+  gin:
+    hidden_dim: 128
+    num_layers: 4
+    dropout: 0.2
+    train_eps: true
+    
+  # Message Passing Neural Network
+  mpnn:
+    hidden_dim: 128
+    num_layers: 3
+    edge_dim: 32
+    dropout: 0.2
+
+# Molecular Property Prediction Models
+property_prediction:
+  # Multi-task Neural Network
+  multitask_nn:
+    hidden_dims: [512, 256, 128]
+    dropout: 0.3
+    batch_norm: true
+    
+  # Random Forest (for baseline)
+  random_forest:
+    n_estimators: 100
+    max_depth: 10
+    min_samples_split: 2
+    min_samples_leaf: 1
+
+# Molecular Generation Models
+generation:
+  # Variational Autoencoder
+  vae:
+    latent_dim: 128
+    encoder_dims: [512, 256]
+    decoder_dims: [256, 512]
+    beta: 1.0
+    
+  # Generative Adversarial Network
+  gan:
+    generator_dims: [128, 256, 512]
+    discriminator_dims: [512, 256, 128]
+    noise_dim: 100
+
+# Optimization Models
+optimization:
+  # Bayesian Optimization
+  bayesian_opt:
+    acquisition_function: "expected_improvement"
+    kernel: "matern"
+    alpha: 1e-6
+    
+  # Genetic Algorithm
+  genetic_algorithm:
+    population_size: 100
+    mutation_rate: 0.1
+    crossover_rate: 0.8
+    num_generations: 50
+
+# Feature Engineering
+features:
+  # Molecular descriptors
+  molecular_descriptors:
+    - "molecular_weight"
+    - "logp"
+    - "tpsa"
+    - "num_rotatable_bonds"
+    - "num_hbd"
+    - "num_hba"
+    - "num_aromatic_rings"
+    
+  # Fingerprints
+  fingerprints:
+    morgan:
+      radius: 2
+      n_bits: 2048
+    rdkit:
+      max_path: 7
+      fp_size: 2048
+    maccs:
+      n_bits: 167
+
+# Loss functions and metrics
+training:
+  loss_functions:
+    regression: "mse"  # mse, mae, huber
+    classification: "cross_entropy"  # cross_entropy, focal_loss
+    
+  metrics:
+    regression: ["mae", "mse", "r2"]
+    classification: ["accuracy", "precision", "recall", "f1", "auc"]
+    
+  # Regularization
+  regularization:
+    l1_lambda: 0.0
+    l2_lambda: 0.001
+    
+# Model ensemble settings
+ensemble:
+  methods: ["voting", "stacking", "bagging"]
+  n_models: 5
+  voting_strategy: "soft"  # hard, soft

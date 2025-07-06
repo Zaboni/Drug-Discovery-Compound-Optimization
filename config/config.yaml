@@ -1,0 +1,61 @@
+# Drug Discovery Compound Optimization - Main Configuration
+
+# Environment settings
+environment:
+  name: "development"
+  debug: true
+  log_level: "INFO"
+  random_seed: 42
+
+# Data paths
+data:
+  raw_data_path: "data/raw"
+  processed_data_path: "data/processed"
+  external_data_path: "data/external"
+  output_path: "data/output"
+
+# Model paths
+models:
+  save_path: "models/saved"
+  checkpoint_path: "models/checkpoints"
+  load_pretrained: false
+  pretrained_path: null
+
+# Training settings
+training:
+  batch_size: 32
+  num_epochs: 100
+  learning_rate: 0.001
+  early_stopping_patience: 10
+  validation_split: 0.2
+  test_split: 0.1
+
+# API settings
+api:
+  host: "0.0.0.0"
+  port: 8000
+  reload: true
+  workers: 1
+
+# Logging and monitoring
+logging:
+  log_file: "logs/app.log"
+  log_format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  
+# Experiment tracking
+wandb:
+  project: "drug-discovery-optimization"
+  entity: null  # Set your wandb username/team
+  enabled: false  # Set to true when you want to use wandb
+
+# Optimization settings
+optimization:
+  n_trials: 100
+  timeout: 3600  # seconds
+  direction: "maximize"  # or "minimize"
+
+# Hardware settings
+hardware:
+  device: "auto"  # auto, cpu, cuda, mps
+  num_workers: 4
+  pin_memory: true

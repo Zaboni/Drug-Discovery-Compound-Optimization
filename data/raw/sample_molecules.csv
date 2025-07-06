@@ -1,0 +1,11 @@
+smiles,name,activity,ic50_nm,solubility
+CCO,Ethanol,0,10000,0.8
+CC(=O)O,Acetic acid,0,50000,1.2
+c1ccccc1,Benzene,1,500,-2.1
+CC(C)CC1=CC=C(C=C1)C(C)C(=O)O,Ibuprofen,1,100,-3.5
+CN1C=NC2=C1C(=O)N(C(=O)N2C)C,Caffeine,1,200,-0.5
+CC(C)(C)NCC(C1=CC(=C(C=C1)O)CO)O,Salbutamol,1,75,0.2
+CC1=CC=C(C=C1)C(=O)C2=CC=CC=C2,Benzophenone,0,5000,-4.2
+C1=CC=C(C=C1)N,Aniline,1,300,-1.8
+CC(=O)NC1=CC=C(C=C1)O,Paracetamol,1,150,-1.2
+CC1=CC=CC=C1C(=O)O,o-Toluic acid,0,8000,-2.8

@@ -1,0 +1,186 @@
+# Drug Discovery Data Processing Configuration
+
+# Data sources and formats
+data_sources:
+  # Chemical databases
+  chembl:
+    enabled: true
+    version: "33"
+    download_url: "https://ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/latest/"
+    
+  pubchem:
+    enabled: false
+    api_base: "https://pubchem.ncbi.nlm.nih.gov/rest/pug/"
+    
+  zinc:
+    enabled: false
+    subset: "lead-like"
+    
+  # Custom datasets
+  custom:
+    enabled: true
+    file_formats: ["csv", "sdf", "smi"]
+
+# Data preprocessing
+preprocessing:
+  # Molecular standardization
+  standardization:
+    remove_salts: true
+    neutralize_charges: true
+    canonicalize_tautomers: true
+    remove_stereochemistry: false
+    
+  # Quality filters
+  quality_filters:
+    # Lipinski's Rule of Five
+    molecular_weight:
+      min: 150
+      max: 500
+    logp:
+      min: -3
+      max: 5
+    hbd:  # Hydrogen bond donors
+      max: 5
+    hba:  # Hydrogen bond acceptors
+      max: 10
+    tpsa:  # Topological polar surface area
+      max: 140
+      
+    # Additional filters
+    rotatable_bonds:
+      max: 10
+    aromatic_rings:
+      max: 5
+    heavy_atoms:
+      min: 10
+      max: 50
+      
+  # PAINS (Pan Assay Interference Compounds) filtering
+  pains_filtering:
+    enabled: true
+    alert_collections: ["pains_a", "pains_b", "pains_c"]
+    
+  # Duplicate removal
+  deduplication:
+    method: "inchi_key"  # inchi_key, canonical_smiles, morgan_fingerprint
+    keep: "first"  # first, last, random
+
+# Feature extraction
+feature_extraction:
+  # Molecular descriptors
+  descriptors:
+    rdkit_2d:
+      enabled: true
+      descriptors: "all"  # all, basic, lipinski
+    rdkit_3d:
+      enabled: false
+      conformer_generation: true
+      num_conformers: 10
+      
+  # Molecular fingerprints
+  fingerprints:
+    morgan:
+      enabled: true
+      radius: 2
+      n_bits: 2048
+      use_features: false
+      use_chirality: false
+      
+    rdkit:
+      enabled: true
+      max_path: 7
+      fp_size: 2048
+      
+    maccs:
+      enabled: true
+      
+    atom_pair:
+      enabled: false
+      
+    topological_torsion:
+      enabled: false
+
+# Data splitting strategies
+data_splitting:
+  # Random split
+  random:
+    train_ratio: 0.7
+    val_ratio: 0.15
+    test_ratio: 0.15
+    stratify: false
+    
+  # Scaffold split (for better generalization)
+  scaffold:
+    train_ratio: 0.7
+    val_ratio: 0.15
+    test_ratio: 0.15
+    
+  # Time-based split
+  temporal:
+    enabled: false
+    date_column: "publication_date"
+    
+  # Cluster-based split
+  cluster:
+    enabled: false
+    method: "butina"  # butina, taylor_butina
+    threshold: 0.6
+
+# Data augmentation
+augmentation:
+  # SMILES enumeration
+  smiles_enumeration:
+    enabled: false
+    num_variants: 5
+    
+  # Molecular transformations
+  transformations:
+    enabled: false
+    methods: ["stereoisomers", "tautomers"]
+
+# Target processing
+targets:
+  # Activity data processing
+  activity_processing:
+    # IC50, EC50, Ki, etc.
+    activity_types: ["IC50", "EC50", "Ki", "Kd"]
+    units: ["nM", "uM", "mM"]
+    
+    # Convert to pIC50/pEC50
+    convert_to_log: true
+    log_base: 10
+    
+    # Activity thresholds for classification
+    classification_thresholds:
+      active: 1000  # nM
+      inactive: 10000  # nM
+      
+  # Multi-target handling
+  multi_target:
+    strategy: "separate"  # separate, multi_task, average
+    
+# Data validation
+validation:
+  # Chemical validity checks
+  chemical_validity:
+    check_valence: true
+    check_aromaticity: true
+    sanitize_molecules: true
+    
+  # Statistical checks
+  statistical_checks:
+    outlier_detection: true
+    outlier_method: "iqr"  # iqr, zscore, isolation_forest
+    outlier_threshold: 3.0
+    
+# Caching and performance
+caching:
+  enabled: true
+  cache_dir: "data/cache"
+  cache_descriptors: true
+  cache_fingerprints: true
+  
+performance:
+  n_jobs: -1  # Use all available cores
+  chunk_size: 1000
+  memory_limit: "8GB"
