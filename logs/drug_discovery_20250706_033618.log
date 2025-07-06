@@ -1,0 +1,44 @@
+2025-07-06 03:36:18 - logging_config - INFO - logging_config - setup_logging - 139 - Logging configured successfully
+2025-07-06 03:36:18 - logging_config - INFO - logging_config - setup_logging - 140 - Log files will be saved to: logs
+2025-07-06 03:36:18 - logging_config - INFO - logging_config - setup_logging - 141 - Main log file: logs/drug_discovery_20250706_033618.log
+2025-07-06 03:36:18 - __main__ - INFO - process_data - main - 520 - Processing data/raw/chembl_CHEMBL279_activities.csv
+2025-07-06 03:36:18 - __main__ - INFO - process_data - load_data - 97 - Loading data from data/raw/chembl_CHEMBL279_activities.csv
+2025-07-06 03:36:18 - data_processing.core - INFO - loader - load_csv_file - 97 - Loaded 100 molecules from CSV file data/raw/chembl_CHEMBL279_activities.csv
+2025-07-06 03:36:18 - __main__ - INFO - process_data - load_data - 101 - Loaded 100 records
+2025-07-06 03:36:18 - __main__ - INFO - process_data - load_data - 104 - Columns: ['assay_chembl_id', 'canonical_smiles', 'molecule_chembl_id', 'pchembl_value', 'standard_type', 'standard_units', 'standard_value', 'target_chembl_id', 'type', 'units', 'value']
+2025-07-06 03:36:18 - __main__ - INFO - process_data - load_data - 105 - Memory usage: 0.06 MB
+2025-07-06 03:36:18 - __main__ - INFO - process_data - assess_quality - 124 - Assessing data quality
+2025-07-06 03:36:18 - __main__ - INFO - process_data - assess_quality - 130 - Overall quality score: 98.9/100
+2025-07-06 03:36:18 - __main__ - WARNING - process_data - assess_quality - 136 - Missing data in pchembl_value: 25 (25.0%)
+2025-07-06 03:36:18 - __main__ - INFO - process_data - assess_quality - 141 - SMILES validity rate: 100.0%
+2025-07-06 03:36:18 - __main__ - INFO - process_data - assess_quality - 146 - Data quality recommendations:
+2025-07-06 03:36:18 - __main__ - INFO - process_data - assess_quality - 148 -   1. High missing data in 'pchembl_value' (25.0%)
+2025-07-06 03:36:18 - __main__ - INFO - process_data - assess_quality - 148 -   2. Remove 6 duplicate SMILES
+2025-07-06 03:36:18 - __main__ - INFO - process_data - preprocess_data - 167 - Preprocessing molecular data
+2025-07-06 03:36:18 - __main__ - INFO - process_data - preprocess_data - 171 - Validating SMILES strings
+2025-07-06 03:36:18 - data_processing.core - INFO - preprocessor - validate_molecules - 82 - Validated 100/100 molecules
+2025-07-06 03:36:18 - __main__ - INFO - process_data - preprocess_data - 175 - Valid molecules: 100/100
+2025-07-06 03:36:18 - __main__ - INFO - process_data - preprocess_data - 178 - Standardizing molecules
+2025-07-06 03:36:18 - __main__ - INFO - process_data - preprocess_data - 183 - Removing duplicates
+2025-07-06 03:36:18 - data_processing.core - INFO - preprocessor - remove_duplicates - 151 - Removed 6 duplicates
+2025-07-06 03:36:18 - __main__ - INFO - process_data - preprocess_data - 191 - Removed 6 duplicate molecules
+2025-07-06 03:36:18 - __main__ - INFO - process_data - preprocess_data - 195 - Applying quality filters
+2025-07-06 03:36:18 - data_processing.core - INFO - preprocessor - apply_quality_filters - 177 - Quality filters removed 0 molecules
+2025-07-06 03:36:18 - __main__ - INFO - process_data - preprocess_data - 203 - Preprocessing completed: 94 molecules remaining
+2025-07-06 03:36:18 - __main__ - INFO - process_data - extract_features - 222 - Extracting molecular features
+2025-07-06 03:36:18 - __main__ - INFO - process_data - extract_features - 226 - Calculating molecular descriptors
+2025-07-06 03:36:18 - __main__ - INFO - process_data - extract_features - 231 - Calculating molecular fingerprints
+2025-07-06 03:36:18 - __main__ - INFO - process_data - extract_features - 236 - Extracted 17 new features
+2025-07-06 03:36:18 - __main__ - INFO - process_data - split_data - 258 - Splitting data using random method
+2025-07-06 03:36:18 - data_processing.core - INFO - data_splitting - random_split - 84 - Split data: Train=69, Val=16, Test=15
+2025-07-06 03:36:18 - __main__ - INFO - process_data - split_data - 298 - Data split completed:
+2025-07-06 03:36:18 - __main__ - INFO - process_data - split_data - 299 -   Train: 69 samples (69.0%)
+2025-07-06 03:36:18 - __main__ - INFO - process_data - split_data - 300 -   Validation: 16 samples (16.0%)
+2025-07-06 03:36:18 - __main__ - INFO - process_data - split_data - 301 -   Test: 15 samples (15.0%)
+2025-07-06 03:36:18 - __main__ - INFO - process_data - save_results - 329 - Saving results to data/chembl_processed
+2025-07-06 03:36:18 - __main__ - INFO - process_data - save_results - 336 - Using output directory: /Users/zona/Downloads/Github/Drug-Discovery-Compound-Optimization/data/chembl_processed
+2025-07-06 03:36:18 - __main__ - INFO - process_data - save_results - 351 - Saved processed data to /Users/zona/Downloads/Github/Drug-Discovery-Compound-Optimization/data/chembl_processed/processed_data.csv
+2025-07-06 03:36:18 - __main__ - INFO - process_data - save_results - 362 - Saved train data to /Users/zona/Downloads/Github/Drug-Discovery-Compound-Optimization/data/chembl_processed/train_data.csv
+2025-07-06 03:36:18 - __main__ - INFO - process_data - save_results - 362 - Saved validation data to /Users/zona/Downloads/Github/Drug-Discovery-Compound-Optimization/data/chembl_processed/validation_data.csv
+2025-07-06 03:36:18 - __main__ - INFO - process_data - save_results - 362 - Saved test data to /Users/zona/Downloads/Github/Drug-Discovery-Compound-Optimization/data/chembl_processed/test_data.csv
+2025-07-06 03:36:18 - __main__ - INFO - process_data - save_results - 377 - Saved quality report to /Users/zona/Downloads/Github/Drug-Discovery-Compound-Optimization/data/chembl_processed/data_quality_report.txt

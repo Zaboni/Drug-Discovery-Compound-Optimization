@@ -42,6 +42,7 @@ Drug-Discovery-Compound-Optimization/
 │   │   ├── data_splitting.py # DataSplitter for train/val/test splits
 │   │   ├── splitting_strategies.py # Advanced splitting strategies
 │   │   └── advanced_features.py # Advanced feature extraction methods
+│   ├── logging_config.py  # Logging configuration
 │   ├── models.py          # ML model implementations
 │   ├── training.py        # Training loops and utilities
 │   ├── api.py            # FastAPI web service
@@ -49,20 +50,34 @@ Drug-Discovery-Compound-Optimization/
 ├── data/                  # Data storage
 │   ├── raw/              # Raw datasets
 │   ├── processed/        # Preprocessed data
-│   └── external/         # External reference data
+│   ├── external/         # External reference data
+│   └── test_sample.csv   # Sample test data
 ├── models/               # Model storage
 │   ├── saved/           # Trained models
 │   └── checkpoints/     # Training checkpoints
 ├── notebooks/           # Jupyter notebooks for exploration
+│   ├── 01_data_exploration.ipynb # Comprehensive data exploration
+│   └── 02_feature_engineering.ipynb # Advanced feature engineering
 ├── tests/              # Unit tests
+│   ├── test_data_processing.py # Data processing tests
+│   └── test_molecular_features.py # Molecular features tests
 ├── docs/               # Documentation
+│   └── DATA_PIPELINE_SUMMARY.md # Pipeline implementation summary
 ├── config/             # Configuration files
 │   ├── config.yaml     # Main configuration
 │   ├── model_config.yaml  # Model parameters
 │   └── data_config.yaml   # Data processing settings
 ├── scripts/            # Utility scripts
+│   ├── process_data.py    # Complete data processing pipeline
+│   ├── download_chembl.py # ChEMBL data downloader
+│   ├── download_pubchem.py # PubChem data downloader
+│   └── download_tox21.py  # Tox21 data downloader
+├── logs/               # Log files directory
 ├── requirements.txt    # Python dependencies
-├── setup_env.sh       # Environment setup script
+├── setup_env.sh       # Linux/Mac environment setup script
+├── setup_env.bat      # Windows environment setup script
+├── install_pip.bat    # Pip-only installation script
+├── INSTALLATION_COMPLETE.md # Installation completion guide
 └── README.md          # This file
 ```
 
@@ -290,8 +305,10 @@ pytest tests/test_models.py -v
    from src.models import PropertyPredictor
    import numpy as np
    
-   # Initialize model and create sample data
+   # Initialize model
    model = PropertyPredictor()
+   
+   # Create sample training data
    train_data = np.random.randn(100, 50)  # 100 samples, 50 features  
    val_data = np.random.randn(20, 50)     # 20 validation samples
    

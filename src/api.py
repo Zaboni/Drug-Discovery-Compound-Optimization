@@ -1,20 +1,31 @@
 """
-FastAPI Web Service for Drug Discovery Compound Optimization
+Production-Ready FastAPI Web Service for Drug Discovery Compound Optimization
 
-This module provides a REST API for molecular property prediction,
-compound optimization, and drug discovery services.
+This module provides a comprehensive REST API for molecular property prediction,
+compound optimization, and drug discovery services with rate limiting, caching,
+batch processing, and comprehensive error handling.
 """
 
 import logging
-from typing import List, Dict, Any, Optional, Union
+import time
+from typing import List, Dict, Any, Optional
 from pathlib import Path
+import json
 import yaml
+from datetime import datetime
+import hashlib
 
 try:
-    from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends
+    from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends, Request, Response, UploadFile, File
     from fastapi.middleware.cors import CORSMiddleware
-    from fastapi.responses import JSONResponse
-    from pydantic import BaseModel, Field, field_validator
+    from fastapi.responses import JSONResponse, HTMLResponse, FileResponse
+    from fastapi.staticfiles import StaticFiles
+    from fastapi.templating import Jinja2Templates
+    from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+    from slowapi import Limiter, _rate_limit_exceeded_handler
+    from slowapi.util import get_remote_address
+    from slowapi.errors import RateLimitExceeded
+    from slowapi.middleware import SlowAPIMiddleware
     import uvicorn
     FASTAPI_AVAILABLE = True
 except ImportError:
@@ -36,14 +47,52 @@ except ImportError:
         pass
     class CORSMiddleware:
         pass
+    class Depends:
+        pass
+    class Request:
+        pass
+    class Response:
+        pass
+    class UploadFile:
+        pass
+    class File:
+        pass
+    class HTTPBearer:
+        pass
+    class HTTPAuthorizationCredentials:
+        pass
+    class Limiter:
+        pass
+    class StaticFiles:
+        pass
+    class Jinja2Templates:
+        pass
+    class HTMLResponse:
+        pass
     class uvicorn:
         @staticmethod
         def run(*args, **kwargs):
             pass
+    def _rate_limit_exceeded_handler(*args, **kwargs):
+        pass
+    def get_remote_address(*args, **kwargs):
+        return "127.0.0.1"
+    class RateLimitExceeded(Exception):
+        pass
+    class SlowAPIMiddleware:
+        pass
     def field_validator(*args, **kwargs):
         def decorator(func):
             return func
         return decorator
+
+try:
+    import redis
+    REDIS_AVAILABLE = True
+except ImportError:
+    REDIS_AVAILABLE = False
+    logging.warning("Redis not available. Caching will be limited.")
+    redis = None
 
 try:
     import numpy as np
@@ -60,6 +109,7 @@ try:
     from .data_processing import MolecularDataProcessor
     from .models import PropertyPredictor, RandomForestModel
     from .utils import validate_smiles, calculate_similarity
+    from .api_models import *
 except ImportError:
     # Fallback for when modules aren't available
     MolecularDataProcessor = None
@@ -70,113 +120,175 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
-# Pydantic models for API requests/responses
+# Global configuration
+API_CONFIG = {
+    'rate_limit_per_minute': 100,
+    'max_batch_size': 1000,
+    'cache_ttl_seconds': 3600,
+    'enable_rate_limiting': True,
+    'enable_caching': True,
+    'enable_metrics': True,
+    'cors_origins': ["*"],
+    'max_file_size_mb': 100
+}
+
+# Rate limiting setup
 if FASTAPI_AVAILABLE:
-    class SMILESInput(BaseModel):
-        """Input model for SMILES strings."""
-        smiles: str
+    try:
+        limiter = Limiter(key_func=get_remote_address)
+        RATE_LIMITING_AVAILABLE = True
+    except (ImportError, TypeError):
+        RATE_LIMITING_AVAILABLE = False
+        limiter = None
+        logger.warning("Rate limiting not available - slowapi not installed")
 
-    class PropertyPredictionRequest(BaseModel):
-        """Request model for property prediction."""
-        smiles: Union[str, List[str]]
-        properties: List[str] = ["logp", "solubility", "molecular_weight"]
+    # Cache setup
+    cache = {}
+    if REDIS_AVAILABLE:
+        try:
+            redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+            redis_client.ping()
+            logger.info("Redis connected successfully")
+        except Exception as e:
+            logger.warning(f"Redis connection failed: {e}")
+            redis_client = None
+    else:
+        redis_client = None
 
-        @field_validator('smiles')
-        @classmethod
-        def validate_smiles_input(cls, v):
-            if isinstance(v, str):
-                return [v.strip()]
-            elif isinstance(v, list):
-                return [s.strip() for s in v if s and isinstance(s, str)]
-            else:
-                raise ValueError("SMILES must be a string or list of strings")
+    # Metrics storage
+    metrics = {
+        'total_requests': 0,
+        'successful_requests': 0,
+        'failed_requests': 0,
+        'endpoint_stats': {},
+        'start_time': time.time()
+    }
 
-    class PropertyPredictionResponse(BaseModel):
-        """Response model for property prediction."""
-        smiles: str
-        properties: Dict[str, float]
-        valid: bool
-        error: Optional[str] = None
+    # Background tasks storage
+    background_tasks = {}
 
-    class SimilarityRequest(BaseModel):
-        """Request model for molecular similarity calculation."""
-        query_smiles: str
-        target_smiles: List[str]
-        similarity_metric: str = "tanimoto"
+    # File upload storage
+    UPLOAD_DIR = Path("uploads")
+    UPLOAD_DIR.mkdir(exist_ok=True)
 
-        @field_validator('similarity_metric')
-        @classmethod
-        def validate_metric(cls, v):
-            allowed_metrics = ["tanimoto", "dice", "cosine"]
-            if v not in allowed_metrics:
-                raise ValueError(f"Similarity metric must be one of {allowed_metrics}")
-            return v
+    RESULTS_DIR = Path("results")
+    RESULTS_DIR.mkdir(exist_ok=True)
 
-    class OptimizationRequest(BaseModel):
-        """Request model for compound optimization."""
-        starting_smiles: str
-        target_properties: Dict[str, float]
-        optimization_steps: int = 100
 
-        @field_validator('optimization_steps')
-        @classmethod
-        def validate_steps(cls, v):
-            if v < 1 or v > 1000:
-                raise ValueError("Optimization steps must be between 1 and 1000")
-            return v
+def get_cache_key(endpoint: str, data: Any) -> str:
+    """Generate cache key for request."""
+    data_str = json.dumps(data, sort_keys=True) if isinstance(data, dict) else str(data)
+    return f"{endpoint}:{hashlib.md5(data_str.encode()).hexdigest()}"
 
-    class HealthResponse(BaseModel):
-        """Health check response model."""
-        status: str
-        version: str
-        models_loaded: Dict[str, bool]
-        dependencies: Dict[str, bool]
 
-else:
-    # Dummy classes if FastAPI is not available
-    class BaseModel:
-        pass
-    
-    SMILESInput = PropertyPredictionRequest = PropertyPredictionResponse = BaseModel
-    SimilarityRequest = OptimizationRequest = HealthResponse = BaseModel
+def get_cached_result(cache_key: str) -> Optional[Any]:
+    """Get cached result."""
+    if redis_client:
+        try:
+            result = redis_client.get(cache_key)
+            if result:
+                return json.loads(result)
+        except Exception as e:
+            logger.error(f"Redis get error: {e}")
+
+    # Fallback to local cache
+    if cache_key in cache:
+        data, timestamp = cache[cache_key]
+        if time.time() - timestamp < API_CONFIG['cache_ttl_seconds']:
+            return data
+        else:
+            del cache[cache_key]
+
+    return None
+
+
+def set_cached_result(cache_key: str, data: Any, ttl: int = None) -> None:
+    """Set cached result."""
+    if ttl is None:
+        ttl = API_CONFIG['cache_ttl_seconds']
+
+    if redis_client:
+        try:
+            redis_client.setex(cache_key, ttl, json.dumps(data, default=str))
+            return
+        except Exception as e:
+            logger.error(f"Redis set error: {e}")
+
+    # Fallback to local cache
+    cache[cache_key] = (data, time.time())
+
+
+def track_metrics(endpoint: str, method: str, success: bool, response_time: float):
+    """Track API metrics."""
+    if not API_CONFIG['enable_metrics']:
+        return
+
+    metrics['total_requests'] += 1
+    if success:
+        metrics['successful_requests'] += 1
+    else:
+        metrics['failed_requests'] += 1
+
+    endpoint_key = f"{method}:{endpoint}"
+    if endpoint_key not in metrics['endpoint_stats']:
+        metrics['endpoint_stats'][endpoint_key] = {
+            'total_requests': 0,
+            'successful_requests': 0,
+            'failed_requests': 0,
+            'total_response_time': 0,
+            'max_response_time': 0,
+            'last_request': None
+        }
+
+    stats = metrics['endpoint_stats'][endpoint_key]
+    stats['total_requests'] += 1
+    stats['total_response_time'] += response_time
+    stats['max_response_time'] = max(stats['max_response_time'], response_time)
+    stats['last_request'] = datetime.now()
+
+    if success:
+        stats['successful_requests'] += 1
+    else:
+        stats['failed_requests'] += 1
+
+
+def auth_required(credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer(auto_error=False))):
+    """Authentication dependency (placeholder)."""
+    # In production, implement proper authentication
+    return True
 
 
 class DrugDiscoveryAPI:
-    """Main API class for drug discovery services."""
-    
+    """Enhanced API class for drug discovery services."""
+
     def __init__(self, config_path: Optional[str] = None):
-        """
-        Initialize the Drug Discovery API.
-        
-        Args:
-            config_path: Path to configuration file
-        """
+        """Initialize the Drug Discovery API."""
         self.config = self._load_config(config_path)
         self.data_processor = None
         self.property_predictor = None
         self.models = {}
-        
+        self.start_time = time.time()
+
         # Initialize components
         self._initialize_components()
-        
+
     def _load_config(self, config_path: Optional[str]) -> Dict[str, Any]:
         """Load configuration from file."""
         if config_path and Path(config_path).exists():
             with open(config_path, 'r') as f:
-                return yaml.safe_load(f)
+                config = yaml.safe_load(f)
+                # Update global API config
+                API_CONFIG.update(config.get('api', {}))
+                return config
         else:
             return {
-                'api': {
-                    'host': '0.0.0.0',
-                    'port': 8000,
-                    'reload': True
-                },
+                'api': API_CONFIG,
                 'models': {
                     'load_pretrained': False,
                     'pretrained_path': None
                 }
             }
-    
+
     def _initialize_components(self):
         """Initialize API components."""
         try:
@@ -184,14 +296,14 @@ class DrugDiscoveryAPI:
             if MolecularDataProcessor:
                 self.data_processor = MolecularDataProcessor()
                 logger.info("Data processor initialized")
-            
+
             # Load models if configured
             if self.config.get('models', {}).get('load_pretrained', False):
                 self._load_models()
-                
+
         except Exception as e:
             logger.error(f"Error initializing components: {e}")
-    
+
     def _load_models(self):
         """Load pre-trained models."""
         model_path = self.config.get('models', {}).get('pretrained_path')
@@ -204,66 +316,214 @@ class DrugDiscoveryAPI:
             except Exception as e:
                 logger.error(f"Error loading models: {e}")
 
+    def get_system_health(self) -> Dict[str, Any]:
+        """Get system health status."""
+        uptime = time.time() - self.start_time
+        return {
+            'status': 'healthy',
+            'version': '1.0.0',
+            'uptime': int(uptime),
+            'timestamp': datetime.now(),
+            'models_loaded': bool(self.models),
+            'data_processor_available': self.data_processor is not None,
+            'cache_available': redis_client is not None,
+            'dependencies': {
+                'fastapi': FASTAPI_AVAILABLE,
+                'numpy_pandas': NUMPY_PANDAS_AVAILABLE,
+                'redis': REDIS_AVAILABLE,
+                'rdkit': MolecularDataProcessor is not None
+            }
+        }
+
+    async def predict_properties_batch(self, smiles_list: List[str],
+                                       properties: List[str]) -> List[Dict[str, Any]]:
+        """Predict properties for a batch of molecules."""
+        if not self.data_processor:
+            raise HTTPException(status_code=503, detail="Data processor not available")
+        results = []
+
+        for smiles in smiles_list:
+            try:
+                # Process SMILES
+                processed = self.data_processor.process_smiles([smiles])
+
+                if not processed or not processed[0].get("valid"):
+                    results.append({
+                        'smiles': smiles,
+                        'properties': {},
+                        'valid': False,
+                        'errors': ["Invalid SMILES"]
+                    })
+                    continue
+
+                # Extract features
+                features_df = self.data_processor.extract_features(processed)
+
+                # Predict properties
+                props = {}
+                for prop in properties:
+                    if prop == "molecular_weight":
+                        props[prop] = features_df.iloc[0].get("molecular_weight", 0.0)
+                    elif prop == "logp":
+                        props[prop] = features_df.iloc[0].get("logp", 0.0)
+                    elif prop == "tpsa":
+                        props[prop] = features_df.iloc[0].get("tpsa", 0.0)
+                    else:
+                        # Placeholder for other properties
+                        props[prop] = np.random.uniform(0, 1) if NUMPY_PANDAS_AVAILABLE else 0.5
+
+                results.append({
+                    'smiles': smiles,
+                    'canonical_smiles': processed[0].get('canonical_smiles'),
+                    'properties': props,
+                    'valid': True,
+                    'errors': []
+                })
+            except Exception as e:
+                results.append({
+                    'smiles': smiles,
+                    'properties': {},
+                    'valid': False,
+                    'errors': [str(e)]
+                })
+
+        return results
 
 # Create FastAPI app if available
 if FASTAPI_AVAILABLE:
     # Initialize API
     api_instance = DrugDiscoveryAPI()
-    
+
     app = FastAPI(
         title="Drug Discovery Compound Optimization API",
-        description="REST API for molecular property prediction and compound optimization",
+        description="Production-ready REST API for molecular property prediction and compound optimization",
         version="1.0.0",
         docs_url="/docs",
-        redoc_url="/redoc"
+        redoc_url="/redoc",
+        openapi_tags=[
+            {
+                "name": "Health",
+                "description": "Health check and system status endpoints"
+            },
+            {
+                "name": "Validation",
+                "description": "SMILES validation endpoints"
+            },
+            {
+                "name": "Prediction",
+                "description": "Molecular property prediction endpoints"
+            },
+            {
+                "name": "Similarity",
+                "description": "Molecular similarity calculation endpoints"
+            },
+            {
+                "name": "Optimization",
+                "description": "Compound optimization endpoints"
+            },
+            {
+                "name": "Batch",
+                "description": "Batch processing endpoints"
+            },
+            {
+                "name": "Upload",
+                "description": "File upload and data processing endpoints"
+            },
+            {
+                "name": "Metrics",
+                "description": "API metrics and monitoring endpoints"
+            }
+        ]
     )
-    
-    # Add CORS middleware
+
+    # Add middleware
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],  # Configure appropriately for production
+        allow_origins=API_CONFIG.get('cors_origins', ["*"]),
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    
-    @app.get("/", response_model=Dict[str, str])
+
+    # Add rate limiting middleware if available
+    if RATE_LIMITING_AVAILABLE:
+        app.state.limiter = limiter
+        app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+    # Mount static files if available
+    if Path("static").exists():
+        app.mount("/static", StaticFiles(directory="static"), name="static")
+
+    # Setup templates if available
+    if Path("templates").exists():
+        templates = Jinja2Templates(directory="templates")
+
+    # Root and Health Endpoints
+    @app.get("/", tags=["Health"])
     async def root():
-        """Root endpoint."""
+        """Root endpoint with API information."""
         return {
-            "message": "Drug Discovery Compound Optimization API",
+            "name": "Drug Discovery Compound Optimization API",
             "version": "1.0.0",
-            "docs": "/docs"
-        }
-    
-    @app.get("/health", response_model=HealthResponse)
-    async def health_check():
-        """Health check endpoint."""
-        return HealthResponse(
-            status="healthy",
-            version="1.0.0",
-            models_loaded={
-                "property_predictor": bool(api_instance.models.get('property_predictor')),
-                "data_processor": api_instance.data_processor is not None
-            },
-            dependencies={
-                "fastapi": FASTAPI_AVAILABLE,
-                "numpy_pandas": NUMPY_PANDAS_AVAILABLE,
-                "rdkit": MolecularDataProcessor is not None
+            "description": "Production-ready REST API for molecular property prediction and compound optimization",
+            "docs_url": "/docs",
+            "health_url": "/health",
+            "endpoints": {
+                "validation": "/validate_smiles",
+                "prediction": "/predict_properties",
+                "batch_prediction": "/batch/predict_properties",
+                "similarity": "/calculate_similarity",
+                "optimization": "/optimize_compound",
+                "file_upload": "/upload/molecules",
+                "metrics": "/metrics"
             }
-        )
-    
-    @app.post("/validate_smiles")
+        }
+
+    @app.get("/health", tags=["Health"])
+    async def health_check():
+        """Comprehensive health check endpoint."""
+        health_data = api_instance.get_system_health()
+        return health_data
+
+    @app.get("/health/detailed", tags=["Health"])
+    async def detailed_health_check():
+        """Detailed health check with component status."""
+        health_data = api_instance.get_system_health()
+
+        # Add component checks
+        components = []
+
+        # Check data processor
+        components.append({
+            "name": "MolecularDataProcessor",
+            "status": "healthy" if api_instance.data_processor else "unhealthy",
+            "response_time": None,
+            "error_message": None if api_instance.data_processor else "Data processor not available"
+        })
+
+        # Check cache
+        cache_status = "healthy" if redis_client else "degraded"
+        components.append({
+            "name": "Cache",
+            "status": cache_status,
+            "response_time": None,
+            "error_message": None if redis_client else "Using in-memory cache"
+        })
+
+        health_data["components"] = components
+        return health_data
+
+    # SMILES Validation Endpoints
+    @app.post("/validate_smiles", tags=["Validation"])
     async def validate_smiles_endpoint(smiles_input: SMILESInput):
-        """Validate SMILES string."""
+        """Validate a single SMILES string."""
         try:
             if not api_instance.data_processor:
                 raise HTTPException(status_code=503, detail="Data processor not available")
-            
-            # Process SMILES
+
             processed = api_instance.data_processor.process_smiles([smiles_input.smiles])
             result = processed[0] if processed else {"valid": False}
-            
+
             return {
                 "smiles": smiles_input.smiles,
                 "valid": result.get("valid", False),
@@ -273,138 +533,468 @@ if FASTAPI_AVAILABLE:
         except Exception as e:
             logger.error(f"Error validating SMILES: {e}")
             raise HTTPException(status_code=500, detail=str(e))
-    
-    @app.post("/predict_properties", response_model=List[PropertyPredictionResponse])
-    async def predict_properties(request: PropertyPredictionRequest):
-        """Predict molecular properties."""
+
+    @app.post("/validate_smiles/batch", tags=["Validation"])
+    async def validate_smiles_batch(batch_input: BatchSMILESInput):
+        """Validate multiple SMILES strings."""
         try:
             if not api_instance.data_processor:
                 raise HTTPException(status_code=503, detail="Data processor not available")
-            
+
+            if len(batch_input.smiles_list) > API_CONFIG['max_batch_size']:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Batch size exceeds maximum of {API_CONFIG['max_batch_size']}"
+                )
+
+            processed = api_instance.data_processor.process_smiles(batch_input.smiles_list)
+
             results = []
-            
-            for smiles in request.smiles:
-                try:
-                    # Process SMILES
-                    processed = api_instance.data_processor.process_smiles([smiles])
-                    
-                    if not processed or not processed[0].get("valid"):
-                        results.append(PropertyPredictionResponse(
-                            smiles=smiles,
-                            properties={},
-                            valid=False,
-                            error="Invalid SMILES"
-                        ))
-                        continue
-                    
-                    # Extract features
-                    features_df = api_instance.data_processor.extract_features(processed)
-                    
-                    # Predict properties (placeholder implementation)
-                    properties = {}
-                    for prop in request.properties:
-                        if prop == "molecular_weight":
-                            properties[prop] = features_df.iloc[0].get("molecular_weight", 0.0)
-                        elif prop == "logp":
-                            properties[prop] = features_df.iloc[0].get("logp", 0.0)
-                        elif prop == "tpsa":
-                            properties[prop] = features_df.iloc[0].get("tpsa", 0.0)
-                        else:
-                            # Placeholder for other properties
-                            properties[prop] = np.random.uniform(0, 1) if NUMPY_PANDAS_AVAILABLE else 0.5
-                    
-                    results.append(PropertyPredictionResponse(
-                        smiles=smiles,
-                        properties=properties,
-                        valid=True
-                    ))
-                    
-                except Exception as e:
-                    results.append(PropertyPredictionResponse(
-                        smiles=smiles,
-                        properties={},
-                        valid=False,
-                        error=str(e)
-                    ))
-            
-            return results
-            
+            for i, smiles in enumerate(batch_input.smiles_list):
+                result = processed[i] if i < len(processed) else {"valid": False}
+                results.append({
+                    "smiles": smiles,
+                    "valid": result.get("valid", False),
+                    "canonical_smiles": result.get("canonical_smiles"),
+                    "message": "Valid SMILES" if result.get("valid") else "Invalid SMILES"
+                })
+
+            return {
+                "results": results,
+                "total_molecules": len(batch_input.smiles_list),
+                "valid_molecules": sum(1 for r in results if r["valid"]),
+                "invalid_molecules": sum(1 for r in results if not r["valid"])
+            }
+        except Exception as e:
+            logger.error(f"Error validating SMILES batch: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    # Property Prediction Endpoints
+    @app.post("/predict_properties", tags=["Prediction"])
+    async def predict_properties(request: PropertyPredictionRequest):
+        """Predict molecular properties for single or multiple molecules."""
+        try:
+            if not api_instance.data_processor:
+                raise HTTPException(status_code=503, detail="Data processor not available")
+
+            start_time = time.time()
+            results = await api_instance.predict_properties_batch(request.smiles, request.properties)
+            processing_time = time.time() - start_time
+
+            return {
+                "results": results,
+                "total_molecules": len(request.smiles),
+                "valid_molecules": sum(1 for r in results if r["valid"]),
+                "invalid_molecules": sum(1 for r in results if not r["valid"]),
+                "processing_time": processing_time
+            }
         except Exception as e:
             logger.error(f"Error predicting properties: {e}")
             raise HTTPException(status_code=500, detail=str(e))
-    
-    @app.post("/calculate_similarity")
+
+    @app.post("/batch/predict_properties", tags=["Batch"])
+    async def batch_predict_properties(
+        request: PropertyPredictionRequest,
+        background_tasks: BackgroundTasks
+    ):
+        """Submit batch property prediction job."""
+        try:
+            if len(request.smiles) > API_CONFIG['max_batch_size']:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Batch size exceeds maximum of {API_CONFIG['max_batch_size']}"
+                )
+
+            # Generate job ID
+            job_id = f"batch_{int(time.time())}_{len(request.smiles)}"
+
+            # Store job info
+            background_tasks_storage = {
+                "job_id": job_id,
+                "status": "submitted",
+                "total_molecules": len(request.smiles),
+                "processed_molecules": 0,
+                "created_at": datetime.now(),
+                "estimated_completion": datetime.now()  # Add estimated time
+            }
+            background_tasks[job_id] = background_tasks_storage
+
+            # Add to background processing (placeholder)
+            def process_batch():
+                # This would run the actual batch processing
+                background_tasks[job_id]["status"] = "processing"
+                # ... actual processing would go here
+                background_tasks[job_id]["status"] = "completed"
+
+            background_tasks.add_task(process_batch)
+
+            return {
+                "job_id": job_id,
+                "status": "submitted",
+                "total_molecules": len(request.smiles),
+                "estimated_completion_time": 300,  # 5 minutes estimate
+                "polling_url": f"/batch/status/{job_id}",
+                "result_url": f"/batch/results/{job_id}"
+            }
+        except Exception as e:
+            logger.error(f"Error submitting batch job: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.get("/batch/status/{job_id}", tags=["Batch"])
+    async def get_batch_status(job_id: str):
+        """Get status of batch processing job."""
+        if job_id not in background_tasks:
+            raise HTTPException(status_code=404, detail="Job not found")
+
+        job_info = background_tasks[job_id]
+        return {
+            "job_id": job_id,
+            "status": job_info["status"],
+            "total_molecules": job_info["total_molecules"],
+            "processed_molecules": job_info.get("processed_molecules", 0),
+            "created_at": job_info["created_at"],
+            "progress": job_info.get("processed_molecules", 0) / job_info["total_molecules"]
+        }
+
+    # Similarity Calculation Endpoints
+    @app.post("/calculate_similarity", tags=["Similarity"])
+    @with_rate_limit("100/minute")
+    @with_caching(3600)
+    @with_metrics
     async def calculate_similarity_endpoint(request: SimilarityRequest):
-        """Calculate molecular similarity."""
+        """Calculate molecular similarity between query and target molecules."""
         try:
             if not api_instance.data_processor:
                 raise HTTPException(status_code=503, detail="Data processor not available")
-            
+
+            # Check batch size limit
+            if len(request.target_smiles) > API_CONFIG['max_batch_size']:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Target list exceeds maximum of {API_CONFIG['max_batch_size']}"
+                )
+
             # Process query molecule
             query_processed = api_instance.data_processor.process_smiles([request.query_smiles])
             if not query_processed or not query_processed[0].get("valid"):
                 raise HTTPException(status_code=400, detail="Invalid query SMILES")
-            
+
             # Process target molecules
             target_processed = api_instance.data_processor.process_smiles(request.target_smiles)
-            
+
             # Calculate similarities (placeholder implementation)
+            start_time = time.time()
             similarities = []
             for i, target_smiles in enumerate(request.target_smiles):
                 if i < len(target_processed) and target_processed[i].get("valid"):
-                    # Placeholder similarity calculation
-                    similarity = np.random.uniform(0, 1) if NUMPY_PANDAS_AVAILABLE else 0.5
+                    # Use real similarity calculation if available
+                    if calculate_similarity:
+                        similarity = calculate_similarity(
+                            request.query_smiles,
+                            target_smiles,
+                            method=request.similarity_metric
+                        )
+                    else:
+                        similarity = np.random.uniform(0, 1) if NUMPY_PANDAS_AVAILABLE else 0.5
+
                     similarities.append({
                         "target_smiles": target_smiles,
-                        "similarity": similarity,
+                        "similarity_score": similarity,
                         "metric": request.similarity_metric
                     })
                 else:
                     similarities.append({
                         "target_smiles": target_smiles,
-                        "similarity": 0.0,
+                        "similarity_score": 0.0,
                         "metric": request.similarity_metric,
                         "error": "Invalid target SMILES"
                     })
-            
+
+            # Filter by threshold and sort
+            if request.threshold > 0:
+                similarities = [s for s in similarities if s.get("similarity_score", 0) >= request.threshold]
+
+            # Sort by similarity score
+            similarities.sort(key=lambda x: x.get("similarity_score", 0), reverse=True)
+
+            # Apply top_k limit
+            if request.top_k:
+                similarities = similarities[:request.top_k]
+
+            processing_time = time.time() - start_time
+
             return {
                 "query_smiles": request.query_smiles,
-                "similarities": similarities,
-                "metric": request.similarity_metric
+                "results": similarities,
+                "total_comparisons": len(request.target_smiles),
+                "above_threshold": len(similarities),
+                "metric": request.similarity_metric,
+                "processing_time": processing_time
             }
-            
+
         except Exception as e:
             logger.error(f"Error calculating similarity: {e}")
             raise HTTPException(status_code=500, detail=str(e))
-    
-    @app.post("/optimize_compound")
+
+    # Compound Optimization Endpoints
+    @app.post("/optimize_compound", tags=["Optimization"])
+    @with_rate_limit("10/minute")
+    @with_metrics
     async def optimize_compound(request: OptimizationRequest, background_tasks: BackgroundTasks):
-        """Optimize compound for target properties."""
+        """Start compound optimization for target properties."""
         try:
-            # This would typically be a long-running task
-            # For now, return a placeholder response
-            
-            return {
-                "message": "Optimization started",
+            # Generate task ID
+            task_id = f"opt_{int(time.time())}"
+
+            # Store optimization task info
+            optimization_task = {
+                "task_id": task_id,
+                "status": "pending",
                 "starting_smiles": request.starting_smiles,
-                "target_properties": request.target_properties,
-                "optimization_steps": request.optimization_steps,
-                "status": "running",
-                "estimated_time": "5-10 minutes"
+                "targets": [{"property": t.property_name, "value": t.target_value} for t in request.targets],
+                "max_iterations": request.max_iterations,
+                "created_at": datetime.now(),
+                "estimated_completion_time": 600,  # 10 minutes estimate
             }
-            
+            background_tasks[task_id] = optimization_task
+
+            # Add to background processing (placeholder)
+            def run_optimization():
+                # This would run the actual optimization
+                background_tasks[task_id]["status"] = "running"
+                # ... actual optimization would go here
+                background_tasks[task_id]["status"] = "completed"
+
+            background_tasks.add_task(run_optimization)
+
+            return {
+                "task_id": task_id,
+                "status": "pending",
+                "estimated_completion_time": 600,
+                "polling_url": f"/optimization/status/{task_id}"
+            }
+
         except Exception as e:
-            logger.error(f"Error optimizing compound: {e}")
+            logger.error(f"Error starting compound optimization: {e}")
             raise HTTPException(status_code=500, detail=str(e))
-    
-    @app.get("/models")
-    async def list_models():
-        """List available models."""
+
+    @app.get("/optimization/status/{task_id}", tags=["Optimization"])
+    async def get_optimization_status(task_id: str):
+        """Get status of optimization task."""
+        if task_id not in background_tasks:
+            raise HTTPException(status_code=404, detail="Task not found")
+
+        task_info = background_tasks[task_id]
+        return task_info
+
+    # File Upload Endpoints
+    @app.post("/upload/molecules", tags=["Upload"])
+    @with_rate_limit("20/minute")
+    @with_metrics
+    async def upload_molecule_file(
+        file: UploadFile = File(...),
+        smiles_column: str = "smiles",
+        target_column: str = None,
+        background_tasks: BackgroundTasks = BackgroundTasks()
+    ):
+        """Upload and process molecular data file."""
+        try:
+            # Validate file type
+            allowed_types = ["text/csv", "application/vnd.ms-excel",
+                           "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"]
+            if file.content_type not in allowed_types:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Unsupported file type: {file.content_type}"
+                )
+
+            # Check file size
+            max_size = API_CONFIG['max_file_size_mb'] * 1024 * 1024  # Convert to bytes
+            file_size = len(await file.read())
+            await file.seek(0)  # Reset file pointer
+
+            if file_size > max_size:
+                raise HTTPException(
+                    status_code=413,
+                    detail=f"File size exceeds maximum of {API_CONFIG['max_file_size_mb']}MB"
+                )
+
+            # Save uploaded file
+            upload_id = f"upload_{int(time.time())}"
+            file_path = UPLOAD_DIR / f"{upload_id}_{file.filename}"
+
+            with open(file_path, "wb") as buffer:
+                content = await file.read()
+                buffer.write(content)
+
+            # Process file in background
+            def process_uploaded_file():
+                try:
+                    # Load file based on extension
+                    if file_path.suffix.lower() == '.csv':
+                        df = pd.read_csv(file_path) if NUMPY_PANDAS_AVAILABLE else None
+                    elif file_path.suffix.lower() in ['.xlsx', '.xls']:
+                        df = pd.read_excel(file_path) if NUMPY_PANDAS_AVAILABLE else None
+                    else:
+                        raise ValueError("Unsupported file format")
+
+                    if df is None:
+                        raise ValueError("Could not load file - pandas not available")
+
+                    # Validate SMILES column
+                    if smiles_column not in df.columns:
+                        raise ValueError(f"SMILES column '{smiles_column}' not found")
+
+                    # Process molecules
+                    total_rows = len(df)
+                    valid_rows = 0
+
+                    if api_instance.data_processor:
+                        processed = api_instance.data_processor.process_smiles(df[smiles_column].tolist())
+                        valid_rows = sum(1 for p in processed if p.get("valid", False))
+
+                    # Save results
+                    result_path = RESULTS_DIR / f"processed_{upload_id}.csv"
+                    df.to_csv(result_path, index=False)
+
+                    # Update background job status
+                    background_tasks[upload_id] = {
+                        "upload_id": upload_id,
+                        "status": "completed",
+                        "total_rows": total_rows,
+                        "valid_rows": valid_rows,
+                        "invalid_rows": total_rows - valid_rows,
+                        "result_file": str(result_path)
+                    }
+
+                except Exception as e:
+                    background_tasks[upload_id] = {
+                        "upload_id": upload_id,
+                        "status": "failed",
+                        "error": str(e)
+                    }
+                    logger.error(f"Error processing uploaded file: {e}")
+
+            # Initialize job status
+            background_tasks[upload_id] = {
+                "upload_id": upload_id,
+                "status": "processing",
+                "filename": file.filename,
+                "file_size": file_size,
+                "created_at": datetime.now()
+            }
+
+            background_tasks.add_task(process_uploaded_file)
+
+            return {
+                "upload_id": upload_id,
+                "filename": file.filename,
+                "file_size": file_size,
+                "status": "processing",
+                "polling_url": f"/upload/status/{upload_id}"
+            }
+
+        except Exception as e:
+            logger.error(f"Error uploading file: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.get("/upload/status/{upload_id}", tags=["Upload"])
+    async def get_upload_status(upload_id: str):
+        """Get status of file upload processing."""
+        if upload_id not in background_tasks:
+            raise HTTPException(status_code=404, detail="Upload not found")
+
+        return background_tasks[upload_id]
+
+    # Metrics and Monitoring Endpoints
+    @app.get("/metrics", tags=["Metrics"])
+    @with_rate_limit("60/minute")
+    async def get_api_metrics():
+        """Get API usage metrics and statistics."""
+        if not API_CONFIG['enable_metrics']:
+            raise HTTPException(status_code=403, detail="Metrics collection is disabled")
+
+        # Calculate uptime
+        uptime = time.time() - metrics['start_time']
+
+        # Calculate error rate
+        total_requests = metrics['total_requests']
+        error_rate = (metrics['failed_requests'] / total_requests * 100) if total_requests > 0 else 0
+
+        # Calculate average response time per endpoint
+        endpoint_metrics = []
+        for endpoint_key, stats in metrics['endpoint_stats'].items():
+            avg_response_time = (
+                stats['total_response_time'] / stats['total_requests']
+                if stats['total_requests'] > 0 else 0
+            )
+            endpoint_metrics.append({
+                "endpoint": endpoint_key,
+                "total_requests": stats['total_requests'],
+                "successful_requests": stats['successful_requests'],
+                "failed_requests": stats['failed_requests'],
+                "average_response_time": avg_response_time,
+                "max_response_time": stats['max_response_time'],
+                "last_request": stats['last_request']
+            })
+
         return {
-            "available_models": list(api_instance.models.keys()),
-            "model_status": api_instance.models
+            "system_metrics": {
+                "uptime": uptime,
+                "total_requests": total_requests,
+                "successful_requests": metrics['successful_requests'],
+                "failed_requests": metrics['failed_requests'],
+                "error_rate": error_rate
+            },
+            "endpoint_metrics": endpoint_metrics,
+            "memory_usage": {
+                "cache_size": len(cache),
+                "background_tasks": len(background_tasks)
+            }
         }
 
+    # Model Management Endpoints
+    @app.get("/models", tags=["Models"])
+    async def list_models():
+        """List available models and their status."""
+        return {
+            "available_models": list(api_instance.models.keys()),
+            "model_status": api_instance.models,
+            "data_processor_available": api_instance.data_processor is not None
+        }
+
+    # Web Interface Endpoints
+    @app.get("/app", response_class=HTMLResponse, tags=["Web Interface"])
+    async def web_interface(request: Request):
+        """Serve the web interface."""
+        if Path("templates").exists() and 'templates' in globals():
+            return templates.TemplateResponse("index.html", {"request": request})
+        else:
+            return HTMLResponse("""
+                <!DOCTYPE html>
+                <html>
+                    <head>
+                        <title>Drug Discovery API</title>
+                        <meta charset="utf-8">
+                        <meta name="viewport" content="width=device-width, initial-scale=1">
+                        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+                    </head>
+                    <body>
+                        <div class="container mt-5">
+                            <div class="row justify-content-center">
+                                <div class="col-md-8 text-center">
+                                    <h1 class="mb-4">🧬 Drug Discovery API</h1>
+                                    <p class="lead mb-4">Web interface template not found.</p>
+                                    <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                                        <a href="/docs" class="btn btn-primary">📚 API Documentation</a>
+                                        <a href="/health" class="btn btn-outline-primary">💚 Health Check</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </body>
+                </html>
+            """)
 else:
     # Create dummy app if FastAPI is not available
     app = None

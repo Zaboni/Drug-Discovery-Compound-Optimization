@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  # Override API service for development
+  api:
+    build:
+      target: development
+    environment:
+      - ENVIRONMENT=development
+      - LOG_LEVEL=DEBUG
+      - REDIS_URL=redis://redis:6379/0
+    volumes:
+      - .:/app
+      - /app/__pycache__
+      - /app/src/__pycache__
+      - /app/.venv
+    ports:
+      - "8000:8000"
+      - "8888:8888"  # For Jupyter
+    command: ["python", "-m", "uvicorn", "src.api:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+  # pgAdmin for database management (development only)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@drugdiscovery.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - drug-discovery-network
+    profiles:
+      - dev-tools
+
+  # Jupyter Lab for interactive development
+  jupyter:
+    build:
+      context: .
+      target: development
+    environment:
+      - ENVIRONMENT=development
+    ports:
+      - "8889:8888"
+    volumes:
+      - .:/app
+      - /app/__pycache__
+      - /app/src/__pycache__
+    command: ["jupyter", "lab", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--allow-root", "--NotebookApp.token=''"]
+    networks:
+      - drug-discovery-network
+    profiles:
+      - jupyter
+
+  # Redis Commander for Redis management (development only)  
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+    networks:
+      - drug-discovery-network
+    profiles:
+      - dev-tools
+
+volumes:
+  pgadmin_data:

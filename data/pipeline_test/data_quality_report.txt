@@ -1,0 +1,39 @@
+============================================================
+MOLECULAR DATASET QUALITY REPORT
+============================================================
+
+DATASET OVERVIEW
+--------------------
+Total records: 15
+Total columns: 8
+Overall quality score: 98.3/100
+
+MISSING DATA SUMMARY
+--------------------
+activity: 1 missing (6.7%)
+ic50_nM: 1 missing (6.7%)
+solubility: 1 missing (6.7%)
+canonical_smiles: 1 missing (6.7%)
+
+SMILES QUALITY
+---------------
+Total SMILES: 14
+Valid SMILES: 14
+Invalid SMILES: 0
+Validity rate: 100.0%
+
+DUPLICATE ANALYSIS
+------------------
+Duplicate rows: 0
+Duplicate SMILES: 0
+
+COLUMN DATA TYPES
+-----------------
+smiles: object
+name: object
+activity: float64
+ic50_nM: float64
+solubility: float64
+valid: bool
+canonical_smiles: object
+standardized_smiles: object

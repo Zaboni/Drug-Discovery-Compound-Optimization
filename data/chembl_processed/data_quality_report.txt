@@ -1,0 +1,45 @@
+============================================================
+MOLECULAR DATASET QUALITY REPORT
+============================================================
+
+DATASET OVERVIEW
+--------------------
+Total records: 94
+Total columns: 13
+Overall quality score: 99.0/100
+
+MISSING DATA SUMMARY
+--------------------
+pchembl_value: 25 missing (26.6%)
+
+SMILES QUALITY
+---------------
+Total SMILES: 94
+Valid SMILES: 94
+Invalid SMILES: 0
+Validity rate: 100.0%
+
+DUPLICATE ANALYSIS
+------------------
+Duplicate rows: 0
+Duplicate SMILES: 0
+
+RECOMMENDATIONS
+---------------
+1. High missing data in 'pchembl_value' (26.6%)
+
+COLUMN DATA TYPES
+-----------------
+assay_chembl_id: object
+canonical_smiles: object
+molecule_chembl_id: object
+pchembl_value: float64
+standard_type: object
+standard_units: object
+standard_value: float64
+target_chembl_id: object
+type: object
+units: object
+value: float64
+valid: bool
+standardized_smiles: object

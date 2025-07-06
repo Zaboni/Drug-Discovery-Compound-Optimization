@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drug Discovery Compound Optimization</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/static/css/styles.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-flask me-2"></i>
+                Drug Discovery Platform
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#prediction">Prediction</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#similarity">Similarity</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#optimization">Optimization</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/docs" target="_blank">API Docs</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container my-5">
+        <!-- Hero Section -->
+        <div class="row mb-5">
+            <div class="col-12 text-center">
+                <h1 class="display-4 mb-3">🧬 Drug Discovery Platform</h1>
+                <p class="lead mb-4">
+                    Advanced molecular property prediction and compound optimization using machine learning
+                </p>
+                <div class="row g-3 justify-content-center">
+                    <div class="col-md-3">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-chart-line fa-2x text-primary mb-3"></i>
+                                <h5>Property Prediction</h5>
+                                <p class="small">Predict molecular properties using AI</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-search fa-2x text-success mb-3"></i>
+                                <h5>Similarity Search</h5>
+                                <p class="small">Find similar molecular compounds</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-cogs fa-2x text-warning mb-3"></i>
+                                <h5>Optimization</h5>
+                                <p class="small">Optimize compounds for target properties</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-upload fa-2x text-info mb-3"></i>
+                                <h5>Batch Processing</h5>
+                                <p class="small">Upload and process datasets</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Property Prediction Section -->
+        <section id="prediction" class="mb-5">
+            <div class="row">
+                <div class="col-12">
+                    <h2 class="mb-4"><i class="fas fa-chart-line me-2"></i>Molecular Property Prediction</h2>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-molecule me-2"></i>Single Molecule</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="predictionForm">
+                                <div class="mb-3">
+                                    <label for="smilesInput" class="form-label">SMILES String</label>
+                                    <input type="text" class="form-control" id="smilesInput" 
+                                           placeholder="e.g., CCO (ethanol)" required>
+                                    <div class="form-text">Enter a valid SMILES notation for the molecule</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Properties to Predict</label>
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="prop_mw" value="molecular_weight" checked>
+                                                <label class="form-check-label" for="prop_mw">Molecular Weight</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="prop_logp" value="logp" checked>
+                                                <label class="form-check-label" for="prop_logp">LogP</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="prop_tpsa" value="tpsa" checked>
+                                                <label class="form-check-label" for="prop_tpsa">TPSA</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="prop_hbd" value="num_hbd">
+                                                <label class="form-check-label" for="prop_hbd">H-bond Donors</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="prop_hba" value="num_hba">
+                                                <label class="form-check-label" for="prop_hba">H-bond Acceptors</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="prop_rot" value="num_rotatable_bonds">
+                                                <label class="form-check-label" for="prop_rot">Rotatable Bonds</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-calculator me-2"></i>Predict Properties
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary ms-2" onclick="addExample('CCO')">
+                                    <i class="fas fa-lightbulb me-2"></i>Example
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-chart-bar me-2"></i>Results</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="predictionResults">
+                                <div class="text-center text-muted py-4">
+                                    <i class="fas fa-arrow-left fa-2x mb-3"></i>
+                                    <p>Enter a SMILES string and select properties to see predictions</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Molecular Similarity Section -->
+        <section id="similarity" class="mb-5">
+            <div class="row">
+                <div class="col-12">
+                    <h2 class="mb-4"><i class="fas fa-search me-2"></i>Molecular Similarity Search</h2>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-crosshairs me-2"></i>Search Parameters</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="similarityForm">
+                                <div class="mb-3">
+                                    <label for="querySmiles" class="form-label">Query Molecule (SMILES)</label>
+                                    <input type="text" class="form-control" id="querySmiles" 
+                                           placeholder="e.g., c1ccccc1 (benzene)" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="targetSmiles" class="form-label">Target Molecules</label>
+                                    <textarea class="form-control" id="targetSmiles" rows="4" 
+                                              placeholder="Enter one SMILES per line" required></textarea>
+                                    <div class="form-text">Enter multiple SMILES strings, one per line</div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label for="similarityMetric" class="form-label">Similarity Metric</label>
+                                        <select class="form-select" id="similarityMetric">
+                                            <option value="tanimoto" selected>Tanimoto</option>
+                                            <option value="dice">Dice</option>
+                                            <option value="cosine">Cosine</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="similarityThreshold" class="form-label">Threshold</label>
+                                        <input type="number" class="form-control" id="similarityThreshold" 
+                                               min="0" max="1" step="0.1" value="0.3">
+                                    </div>
+                                </div>
+                                <div class="mt-3">
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-search me-2"></i>Search Similar
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary ms-2" onclick="addSimilarityExample()">
+                                        <i class="fas fa-lightbulb me-2"></i>Example
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-list-ol me-2"></i>Similarity Results</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="similarityResults">
+                                <div class="text-center text-muted py-4">
+                                    <i class="fas fa-arrow-left fa-2x mb-3"></i>
+                                    <p>Enter query and target molecules to find similarities</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Compound Optimization Section -->
+        <section id="optimization" class="mb-5">
+            <div class="row">
+                <div class="col-12">
+                    <h2 class="mb-4"><i class="fas fa-cogs me-2"></i>Compound Optimization</h2>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-target me-2"></i>Optimization Parameters</h5>
+                </div>
+                <div class="card-body">
+                    <form id="optimizationForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="startingSmiles" class="form-label">Starting Molecule (SMILES)</label>
+                                    <input type="text" class="form-control" id="startingSmiles" 
+                                           placeholder="e.g., CCO" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="maxIterations" class="form-label">Max Iterations</label>
+                                    <input type="number" class="form-control" id="maxIterations" 
+                                           min="10" max="1000" value="100">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Optimization Targets</label>
+                                <div class="mb-3">
+                                    <div class="row g-2">
+                                        <div class="col-6">
+                                            <select class="form-select" id="targetProperty">
+                                                <option value="molecular_weight">Molecular Weight</option>
+                                                <option value="logp" selected>LogP</option>
+                                                <option value="tpsa">TPSA</option>
+                                                <option value="bioactivity">Bioactivity</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-4">
+                                            <input type="number" class="form-control" id="targetValue" 
+                                                   placeholder="Target value" step="0.1">
+                                        </div>
+                                        <div class="col-2">
+                                            <button type="button" class="btn btn-outline-success" onclick="addOptimizationTarget()">
+                                                <i class="fas fa-plus"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="optimizationTargets" class="mb-3">
+                                    <!-- Dynamic targets will be added here -->
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-warning">
+                                    <i class="fas fa-play me-2"></i>Start Optimization
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary ms-2" onclick="addOptimizationExample()">
+                                    <i class="fas fa-lightbulb me-2"></i>Example
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="mt-4" id="optimizationResults" style="display: none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-hourglass-half me-2"></i>Optimization Progress</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="optimizationStatus">
+                            <!-- Optimization status will be displayed here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- File Upload Section -->
+        <section id="upload" class="mb-5">
+            <div class="row">
+                <div class="col-12">
+                    <h2 class="mb-4"><i class="fas fa-upload me-2"></i>Batch File Processing</h2>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-file-csv me-2"></i>Upload Molecular Dataset</h5>
+                </div>
+                <div class="card-body">
+                    <form id="uploadForm" enctype="multipart/form-data">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="fileUpload" class="form-label">Select File</label>
+                                    <input type="file" class="form-control" id="fileUpload" 
+                                           accept=".csv,.xlsx,.xls" required>
+                                    <div class="form-text">Supported formats: CSV, Excel (.xlsx, .xls)</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="smilesColumn" class="form-label">SMILES Column Name</label>
+                                    <input type="text" class="form-control" id="smilesColumn" 
+                                           value="smiles" placeholder="smiles">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="targetColumn" class="form-label">Target Column (Optional)</label>
+                                    <input type="text" class="form-control" id="targetColumn" 
+                                           placeholder="activity, bioactivity, etc.">
+                                </div>
+                                <div class="mb-3">
+                                    <button type="submit" class="btn btn-info">
+                                        <i class="fas fa-cloud-upload-alt me-2"></i>Upload & Process
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="uploadResults" style="display: none;">
+                        <hr>
+                        <div id="uploadStatus">
+                            <!-- Upload status will be displayed here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Drug Discovery Platform</h6>
+                    <p class="small mb-0">Advanced molecular analysis and optimization</p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <a href="/docs" class="text-white-50 me-3">API Documentation</a>
+                    <a href="/health" class="text-white-50 me-3">Health Status</a>
+                    <a href="/metrics" class="text-white-50">API Metrics</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Loading Modal -->
+    <div class="modal fade" id="loadingModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-body text-center py-4">
+                    <div class="spinner-border text-primary mb-3" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mb-0">Processing...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
