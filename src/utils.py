@@ -169,12 +169,16 @@ def validate_smiles(smiles: str) -> bool:
         logger.warning("RDKit not available - cannot validate SMILES")
         return False
     
-    try:
-        mol = Chem.MolFromSmiles(smiles)
-        return mol is not None
-    except Exception:
+    # Handle None and empty strings
+    if not smiles or not str(smiles).strip():
         return False
 
+    try:
+        mol = Chem.MolFromSmiles(smiles)
+        # Check if molecule is valid and has at least one atom
+        return mol is not None and mol.GetNumAtoms() > 0
+    except Exception:
+        return False
 
 def canonicalize_smiles(smiles: str) -> Optional[str]:
     """

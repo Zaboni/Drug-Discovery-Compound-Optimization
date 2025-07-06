@@ -32,7 +32,16 @@ This system provides a complete pipeline for:
 Drug-Discovery-Compound-Optimization/
 ├── src/                    # Source code modules
 │   ├── __init__.py
-│   ├── data_processing.py  # Data preprocessing and feature extraction
+│   ├── data_processing/   # Data preprocessing and feature extraction package
+│   │   ├── __init__.py
+│   │   ├── core.py        # Shared imports, constants, and utilities
+│   │   ├── processor.py   # MolecularDataProcessor (legacy interface)
+│   │   ├── loader.py      # MolecularDataLoader for file handling
+│   │   ├── preprocessor.py # MolecularPreprocessor for data cleaning
+│   │   ├── feature_engineering.py # FeatureEnginerator for feature extraction
+│   │   ├── data_splitting.py # DataSplitter for train/val/test splits
+│   │   ├── splitting_strategies.py # Advanced splitting strategies
+│   │   └── advanced_features.py # Advanced feature extraction methods
 │   ├── models.py          # ML model implementations
 │   ├── training.py        # Training loops and utilities
 │   ├── api.py            # FastAPI web service
@@ -111,6 +120,7 @@ pip install -r requirements.txt
 
 ### 1. Data Processing
 
+#### Basic Processing (Legacy Interface)
 ```python
 from src.data_processing import MolecularDataProcessor
 
@@ -123,6 +133,32 @@ processed_data = processor.process_smiles(smiles_data)
 
 # Extract molecular features
 features = processor.extract_features(processed_data)
+```
+
+#### Modular Processing (New Structure)
+```python
+from src.data_processing import (
+    MolecularDataLoader, MolecularPreprocessor, 
+    FeatureEnginerator, DataSplitter
+)
+
+# Load data from file
+loader = MolecularDataLoader()
+df = loader.load_csv_file("data/raw/molecules.csv")
+
+# Clean and validate data
+preprocessor = MolecularPreprocessor()
+df_clean = preprocessor.validate_molecules(df)
+df_clean = preprocessor.standardize_molecules(df_clean)
+
+# Extract features
+feature_eng = FeatureEnginerator()
+df_features = feature_eng.extract_molecular_descriptors(df_clean)
+df_features = feature_eng.extract_molecular_fingerprints(df_features)
+
+# Split data
+splitter = DataSplitter()
+train_df, val_df, test_df = splitter.random_split(df_features, target_column='activity')
 ```
 
 ### 2. Model Training
@@ -254,11 +290,12 @@ pytest tests/test_models.py -v
    from src.models import PropertyPredictor
    import numpy as np
    
-   # Initialize model and data
+   # Initialize model and create sample data
    model = PropertyPredictor()
-   train_data = np.random.randn(100, 50)
-   val_data = np.random.randn(20, 50)
+   train_data = np.random.randn(100, 50)  # 100 samples, 50 features  
+   val_data = np.random.randn(20, 50)     # 20 validation samples
    
+   # Initialize trainer with W&B tracking
    trainer = Trainer(model, use_wandb=True)
    trainer.train(train_data, val_data)
    ```

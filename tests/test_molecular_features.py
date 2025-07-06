@@ -24,7 +24,7 @@ except ImportError as e:
     UTILS_AVAILABLE = False
     
     # Define dummy functions for testing
-    def validate_smiles(smiles): return True
+    def validate_smiles(smiles): return False  # Dummy function always returns False when RDKit not available
     def canonicalize_smiles(smiles): return smiles
     def calculate_similarity(s1, s2, method='tanimoto'): return 0.5
     def calculate_molecular_descriptors(smiles): return {}
@@ -68,6 +68,7 @@ class TestSMILESValidation(unittest.TestCase):
                         self.assertEqual(result, expected)
                     except ImportError:
                         # Skip if RDKit not available
+                        Chem = None
                         pass
     
     def test_validate_invalid_smiles(self):
@@ -79,11 +80,12 @@ class TestSMILESValidation(unittest.TestCase):
                     # Only check if RDKit is available
                     try:
                         from rdkit import Chem
-                        mol = Chem.MolFromSmiles(smiles)
-                        expected = mol is not None
-                        self.assertEqual(result, expected)
+                        # Our validate_smiles function should return False for all invalid SMILES
+                        # including empty strings (which RDKit may consider valid but with 0 atoms)
+                        self.assertFalse(result, f"validate_smiles should return False for invalid SMILES: {smiles}")
                     except ImportError:
                         # Skip if RDKit not available
+                        Chem = None
                         pass
     
     def test_canonicalize_smiles(self):
@@ -106,6 +108,7 @@ class TestSMILESValidation(unittest.TestCase):
                             self.assertEqual(result, canonical)
                     except ImportError:
                         # Skip if RDKit not available
+                        Chem = None
                         pass
 
 
