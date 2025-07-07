@@ -30,55 +30,25 @@ This system provides a complete pipeline for:
 
 ```
 Drug-Discovery-Compound-Optimization/
-├── src/                    # Source code modules
-│   ├── __init__.py
-│   ├── data_processing/   # Data preprocessing and feature extraction package
-│   │   ├── __init__.py
-│   │   ├── core.py        # Shared imports, constants, and utilities
-│   │   ├── processor.py   # MolecularDataProcessor (legacy interface)
-│   │   ├── loader.py      # MolecularDataLoader for file handling
-│   │   ├── preprocessor.py # MolecularPreprocessor for data cleaning
-│   │   ├── feature_engineering.py # FeatureEnginerator for feature extraction
-│   │   ├── data_splitting.py # DataSplitter for train/val/test splits
-│   │   ├── splitting_strategies.py # Advanced splitting strategies
-│   │   └── advanced_features.py # Advanced feature extraction methods
-│   ├── logging_config.py  # Logging configuration
-│   ├── models.py          # ML model implementations
-│   ├── training.py        # Training loops and utilities
-│   ├── api.py            # FastAPI web service
-│   └── utils.py          # Utility functions
-├── data/                  # Data storage
-│   ├── raw/              # Raw datasets
-│   ├── processed/        # Preprocessed data
-│   ├── external/         # External reference data
-│   └── test_sample.csv   # Sample test data
-├── models/               # Model storage
-│   ├── saved/           # Trained models
-│   └── checkpoints/     # Training checkpoints
-├── notebooks/           # Jupyter notebooks for exploration
-│   ├── 01_data_exploration.ipynb # Comprehensive data exploration
-│   └── 02_feature_engineering.ipynb # Advanced feature engineering
-├── tests/              # Unit tests
-│   ├── test_data_processing.py # Data processing tests
-│   └── test_molecular_features.py # Molecular features tests
-├── docs/               # Documentation
-│   └── DATA_PIPELINE_SUMMARY.md # Pipeline implementation summary
-├── config/             # Configuration files
-│   ├── config.yaml     # Main configuration
-│   ├── model_config.yaml  # Model parameters
-│   └── data_config.yaml   # Data processing settings
-├── scripts/            # Utility scripts
-│   ├── process_data.py    # Complete data processing pipeline
-│   ├── download_chembl.py # ChEMBL data downloader
-│   ├── download_pubchem.py # PubChem data downloader
-│   └── download_tox21.py  # Tox21 data downloader
-├── logs/               # Log files directory
-├── requirements.txt    # Python dependencies
-├── setup_env.sh       # Linux/Mac environment setup script
-├── setup_env.bat      # Windows environment setup script
-├── install_pip.bat    # Pip-only installation script
-├── INSTALLATION_COMPLETE.md # Installation completion guide
-└── README.md          # This file
+├── config/                  # Configuration files for data processing, models, and API
+├── data/                    # Storage for raw, processed, and external datasets
+├── docs/                    # Documentation and implementation summaries
+├── models/                  # Saved machine learning models and checkpoints
+├── notebooks/               # Jupyter notebooks for interactive analysis and experimentation
+├── scripts/                 # Utility scripts for data download, API execution, and Docker deployment
+├── src/                     # Core application source code
+│   ├── api/                 # FastAPI web service implementation
+│   ├── data_processing/     # Modules for data loading, preprocessing, and feature engineering
+│   ├── models/              # Machine learning model definitions
+│   └── utils/               # General utility functions (SMILES validation, metrics, etc.)
+├── tests/                   # Unit and integration tests
+├── uploads/                 # Temporary storage for user-uploaded files
+├── results/                 # Storage for processed data and reports
+├── .gitignore               # Specifies intentionally untracked files to ignore
+├── requirements.txt         # Project dependencies
+├── LICENSE                  # Software license
+├── README.md                # Project README file
+└── Dockerfile               # Docker configuration for containerization
 ```
 
 ## 🚀 Quick Start
