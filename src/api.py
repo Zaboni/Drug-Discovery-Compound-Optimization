@@ -450,24 +450,30 @@ if FASTAPI_AVAILABLE:
         app.state.limiter = limiter
         app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-    # Mount static files if available
-    if Path("static").exists():
-        app.mount("/static", StaticFiles(directory="static"), name="static")
-
+    # Mount frontend files if available
+    if Path("frontend").exists():
+        app.mount("/frontend", StaticFiles(directory="frontend"), name="frontend")
     # Setup templates if available
-    if Path("templates").exists():
-        templates = Jinja2Templates(directory="templates")
+    if Path("frontend/templates").exists():
+        templates = Jinja2Templates(directory="frontend/templates")
 
     # Root and Health Endpoints
     @app.get("/", tags=["Health"])
     async def root():
-        """Root endpoint with API information."""
+        """Root endpoint - redirect to web interface."""
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url="/app", status_code=302)
+
+    @app.get("/api", tags=["Health"])
+    async def api_info():
+        """API information endpoint."""
         return {
             "name": "Drug Discovery Compound Optimization API",
             "version": "1.0.0",
             "description": "Production-ready REST API for molecular property prediction and compound optimization",
             "docs_url": "/docs",
             "health_url": "/health",
+            "web_interface": "/app",
             "endpoints": {
                 "validation": "/validate_smiles",
                 "prediction": "/predict_properties",
@@ -658,9 +664,6 @@ if FASTAPI_AVAILABLE:
 
     # Similarity Calculation Endpoints
     @app.post("/calculate_similarity", tags=["Similarity"])
-    @with_rate_limit("100/minute")
-    @with_caching(3600)
-    @with_metrics
     async def calculate_similarity_endpoint(request: SimilarityRequest):
         """Calculate molecular similarity between query and target molecules."""
         try:
@@ -738,8 +741,6 @@ if FASTAPI_AVAILABLE:
 
     # Compound Optimization Endpoints
     @app.post("/optimize_compound", tags=["Optimization"])
-    @with_rate_limit("10/minute")
-    @with_metrics
     async def optimize_compound(request: OptimizationRequest, background_tasks: BackgroundTasks):
         """Start compound optimization for target properties."""
         try:
@@ -788,9 +789,8 @@ if FASTAPI_AVAILABLE:
         return task_info
 
     # File Upload Endpoints
+    # File Upload Endpoints
     @app.post("/upload/molecules", tags=["Upload"])
-    @with_rate_limit("20/minute")
-    @with_metrics
     async def upload_molecule_file(
         file: UploadFile = File(...),
         smiles_column: str = "smiles",
@@ -908,9 +908,7 @@ if FASTAPI_AVAILABLE:
 
     # Metrics and Monitoring Endpoints
     @app.get("/metrics", tags=["Metrics"])
-    @with_rate_limit("60/minute")
     async def get_api_metrics():
-        """Get API usage metrics and statistics."""
         if not API_CONFIG['enable_metrics']:
             raise HTTPException(status_code=403, detail="Metrics collection is disabled")
 
@@ -967,7 +965,7 @@ if FASTAPI_AVAILABLE:
     @app.get("/app", response_class=HTMLResponse, tags=["Web Interface"])
     async def web_interface(request: Request):
         """Serve the web interface."""
-        if Path("templates").exists() and 'templates' in globals():
+        if Path("frontend/templates").exists() and 'templates' in globals():
             return templates.TemplateResponse("index.html", {"request": request})
         else:
             return HTMLResponse("""

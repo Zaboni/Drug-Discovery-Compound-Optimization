@@ -64,13 +64,13 @@ A comprehensive web API system has been successfully implemented for the molecul
 - **Results Display**: Dynamic results visualization
 - **Navigation**: Smooth scrolling navigation between sections
 
-#### CSS Styling (`static/css/styles.css`)
+#### CSS Styling (`frontend/css/styles.css`)
 - **Custom Styling**: Enhanced Bootstrap theme with gradients and animations
 - **Responsive Design**: Mobile-friendly layout with media queries
 - **Component Styling**: Custom cards, buttons, forms, and result displays
 - **Dark Mode Support**: Optional dark mode for better accessibility
 
-#### JavaScript Frontend (`static/js/app.js`)
+#### JavaScript Frontend (`frontend/js/app.js`)
 - **API Integration**: Complete frontend API client implementation
 - **Form Handling**: Dynamic form submission and validation
 - **Results Display**: Interactive results visualization and formatting
@@ -166,7 +166,7 @@ src/
 templates/
 └── index.html             # Web interface template
 
-static/
+frontend/
 ├── css/
 │   └── styles.css         # Custom styling
 └── js/
@@ -290,7 +290,7 @@ Based on the code review recommendations:
 4. **Security Hardening**
    - Input sanitization and validation enhancement
    - SQL injection prevention
-   - Rate limiting per user/IP
+   - Rate limiting per user/IP    
 
 5. **Performance Optimization**
    - Database connection pooling

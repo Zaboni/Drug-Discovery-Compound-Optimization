@@ -54,7 +54,7 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/ssl:/etc/nginx/ssl:ro
-      - ./static:/app/static:ro
+      - ./frontend:/app/frontend:ro
     depends_on:
       - api
     restart: unless-stopped

@@ -24,11 +24,78 @@ body {
     background-color: #f8f9fa;
     line-height: 1.6;
 }
-
 .container {
     max-width: 1200px;
 }
 
+/* Beginner-friendly improvements */
+.lead {
+    font-size: 1.1rem;
+    color: #6c757d;
+    margin-bottom: 1.5rem;
+}
+
+/* Large, easy-to-click buttons */
+.btn-lg {
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+}
+
+/* Better form controls */
+.form-control-lg {
+    padding: 1rem;
+    font-size: 1.1rem;
+}
+
+.form-select-lg {
+    padding: 1rem;
+    font-size: 1.1rem;
+}
+
+/* Improved readability */
+.form-check-label {
+    margin-left: 0.5rem;
+    cursor: pointer;
+}
+
+.form-text {
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin-top: 0.5rem;
+}
+
+/* Help and guidance styling */
+.alert {
+    border-radius: 0.5rem;
+    border: none;
+    padding: 1rem 1.5rem;
+}
+
+.alert-info {
+    background-color: #e3f2fd;
+    color: #0d47a1;
+}
+
+.alert-success {
+    background-color: #e8f5e8;
+    color: #2e7d32;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.alert-danger {
+    background-color: #ffebee;
+    color: #c62828;
+}
+
+/* Badge styling */
+.badge {
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+}
 /* Card Enhancements */
 .card {
     border: none;
@@ -79,21 +146,26 @@ body {
     background-clip: text;
 }
 
-.lead {
-    font-size: 1.1rem;
-    color: #6c757d;
-}
-
 /* Feature Cards */
-.card h-100 {
+.feature-card {
     transition: all 0.3s ease;
+    border: none;
+    box-shadow: var(--shadow-sm);
 }
 
-.card h-100:hover {
+.feature-card:hover {
     transform: translateY(-5px);
     box-shadow: var(--shadow-lg);
 }
 
+.card.h-100 {
+    transition: all 0.3s ease;
+}
+
+.card.h-100:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
 /* Form Styling */
 .form-control {
     border-radius: 0.5rem;

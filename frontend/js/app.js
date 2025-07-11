@@ -1,4 +1,4 @@
-// Drug Discovery Platform - Frontend JavaScript
+// ChemAI - AI-Powered Drug Discovery Made Simple - Frontend JavaScript
 
 // Global variables
 const API_BASE_URL = '';
@@ -23,7 +23,7 @@ function showAlert(message, type = 'info') {
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     `;
     document.querySelector('main').insertBefore(alertContainer, document.querySelector('main').firstChild);
-    
+
     // Auto-dismiss after 5 seconds
     setTimeout(() => {
         if (alertContainer.parentNode) {
@@ -32,11 +32,21 @@ function showAlert(message, type = 'info') {
     }, 5000);
 }
 
+function scrollToSection(sectionId) {
+    const element = document.getElementById(sectionId);
+    if (element) {
+        element.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+        });
+    }
+}
+
 function formatProperty(propertyName) {
     const propertyMap = {
         'molecular_weight': 'Molecular Weight (Da)',
-        'logp': 'LogP',
-        'tpsa': 'TPSA (Ų)',
+        'logp': 'LogP (Fat/Water Balance)',
+        'tpsa': 'TPSA (Membrane Crossing)',
         'num_hbd': 'H-bond Donors',
         'num_hba': 'H-bond Acceptors',
         'num_rotatable_bonds': 'Rotatable Bonds',
@@ -47,7 +57,7 @@ function formatProperty(propertyName) {
 
 function formatValue(value, propertyName) {
     if (typeof value !== 'number') return value;
-    
+
     // Round to appropriate decimal places based on property
     if (['molecular_weight', 'tpsa'].includes(propertyName)) {
         return value.toFixed(2);
@@ -58,6 +68,37 @@ function formatValue(value, propertyName) {
     } else {
         return value.toFixed(2);
     }
+}
+
+function getPropertyExplanation(propertyName, value) {
+    const explanations = {
+        'molecular_weight': {
+            description: 'The total weight of all atoms in the molecule',
+            goodRange: 'Drug-like range: 150-500 Da',
+            interpretation: value < 150 ? 'Very small - may be too simple' :
+                           value > 500 ? 'Large - may have absorption issues' :
+                           'Good size for a drug'
+        },
+        'logp': {
+            description: 'How well the molecule dissolves in fat vs water',
+            goodRange: 'Drug-like range: 0-3',
+            interpretation: value < 0 ? 'Very water-loving - may not enter cells well' :
+                           value > 3 ? 'Very fat-loving - may be too greasy' :
+                           'Good balance for drug absorption'
+        },
+        'tpsa': {
+            description: 'How easily the molecule crosses cell membranes',
+            goodRange: 'Drug-like range: 20-130 Ų',
+            interpretation: value < 20 ? 'Too small - may lack specificity' :
+                           value > 130 ? 'Large - may have trouble crossing membranes' :
+                           'Good size for membrane crossing'
+        }
+    };
+    return explanations[propertyName] || {
+        description: 'Molecular property',
+        goodRange: 'Varies by compound type',
+        interpretation: 'See literature for specific ranges'
+    };
 }
 
 // API functions
@@ -75,10 +116,11 @@ async function makeAPICall(endpoint, method = 'GET', data = null) {
         }
 
         const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
-        
+
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+            const errorData = await response.json().catch(() => ({}));
+            const errorMessage = errorData.detail || `Request failed with status ${response.status}`;
+            throw new Error(errorMessage);
         }
 
         return await response.json();
@@ -91,13 +133,16 @@ async function makeAPICall(endpoint, method = 'GET', data = null) {
 // Property Prediction Functions
 function addExample(smiles) {
     document.getElementById('smilesInput').value = smiles;
-    
+
     // Check common properties for example
     const commonProps = ['molecular_weight', 'logp', 'tpsa'];
     commonProps.forEach(prop => {
         const checkbox = document.getElementById(`prop_${prop.replace('molecular_weight', 'mw')}`);
         if (checkbox) checkbox.checked = true;
     });
+
+    // Show success message
+    showAlert('Example loaded! Click "Analyze My Compound" to see results.', 'success');
 }
 
 function getSelectedProperties() {
@@ -110,7 +155,7 @@ async function predictProperties() {
     const properties = getSelectedProperties();
 
     if (!smiles) {
-        showAlert('Please enter a SMILES string', 'warning');
+        showAlert('Please enter a compound structure (SMILES)', 'warning');
         return;
     }
 
@@ -127,8 +172,9 @@ async function predictProperties() {
         });
 
         displayPropertyResults(response);
+        showAlert('Analysis complete! Check your results on the right.', 'success');
     } catch (error) {
-        showAlert(`Prediction failed: ${error.message}`, 'danger');
+        showAlert(`Analysis failed: ${error.message}`, 'danger');
     } finally {
         hideLoading();
     }
@@ -136,24 +182,26 @@ async function predictProperties() {
 
 function displayPropertyResults(response) {
     const resultsContainer = document.getElementById('predictionResults');
-    
+
     if (!response.results || response.results.length === 0) {
         resultsContainer.innerHTML = `
             <div class="alert alert-warning">
                 <i class="fas fa-exclamation-triangle me-2"></i>
-                No results returned
+                <strong>No results found</strong>
+                <p class="mb-0">Please check your SMILES structure and try again.</p>
             </div>
         `;
         return;
     }
 
     const result = response.results[0];
-    
+
     if (!result.valid) {
         resultsContainer.innerHTML = `
             <div class="alert alert-danger">
                 <i class="fas fa-times me-2"></i>
-                Invalid SMILES: ${result.errors ? result.errors.join(', ') : 'Unknown error'}
+                <strong>Invalid compound structure</strong>
+                <p class="mb-0">${result.errors ? result.errors.join(', ') : 'Please check your SMILES format.'}</p>
             </div>
         `;
         return;
@@ -161,30 +209,44 @@ function displayPropertyResults(response) {
 
     let html = `
         <div class="fade-in">
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle me-2"></i>
+                <strong>Analysis Complete!</strong>
+            </div>
             <div class="mb-3">
-                <strong>SMILES:</strong> <span class="smiles-text">${result.smiles}</span>
+                <strong>Your Compound:</strong> 
+                <span class="smiles-text">${result.smiles}</span>
             </div>
     `;
 
     if (result.canonical_smiles && result.canonical_smiles !== result.smiles) {
         html += `
             <div class="mb-3">
-                <strong>Canonical:</strong> <span class="smiles-text">${result.canonical_smiles}</span>
+                <strong>Standardized Form:</strong> 
+                <span class="smiles-text">${result.canonical_smiles}</span>
             </div>
         `;
     }
 
     html += '<div class="results-container">';
-    
+
     for (const [property, value] of Object.entries(result.properties)) {
+        const explanation = getPropertyExplanation(property, value);
         html += `
             <div class="property-result">
-                <div class="property-name">${formatProperty(property)}</div>
-                <div class="property-value">${formatValue(value, property)}</div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="property-name">${formatProperty(property)}</div>
+                    <div class="property-value">${formatValue(value, property)}</div>
+                </div>
+                <div class="small text-muted">
+                    <div>${explanation.description}</div>
+                    <div><strong>${explanation.goodRange}</strong></div>
+                    <div class="text-primary"><i class="fas fa-info-circle me-1"></i>${explanation.interpretation}</div>
+                </div>
             </div>
         `;
     }
-    
+
     html += '</div></div>';
     resultsContainer.innerHTML = html;
 }
@@ -197,6 +259,8 @@ c1ccc(cc1)C
 c1ccncc1
 CCc1ccccc1
 c1ccc(cc1)O`;
+
+    showAlert('Example loaded! Click "Find Similar Compounds" to see results.', 'success');
 }
 
 async function calculateSimilarity() {
@@ -206,12 +270,12 @@ async function calculateSimilarity() {
     const threshold = parseFloat(document.getElementById('similarityThreshold').value);
 
     if (!querySmiles) {
-        showAlert('Please enter a query SMILES string', 'warning');
+        showAlert('Please enter your compound structure (SMILES)', 'warning');
         return;
     }
 
     if (!targetSmilesText) {
-        showAlert('Please enter target SMILES strings', 'warning');
+        showAlert('Please enter known drugs to compare against', 'warning');
         return;
     }
 
@@ -220,7 +284,7 @@ async function calculateSimilarity() {
         .filter(line => line.length > 0);
 
     if (targetSmiles.length === 0) {
-        showAlert('Please enter at least one target SMILES', 'warning');
+        showAlert('Please enter at least one compound to compare against', 'warning');
         return;
     }
 
@@ -234,8 +298,9 @@ async function calculateSimilarity() {
         });
 
         displaySimilarityResults(response);
+        showAlert('Similarity search complete! Check your results on the right.', 'success');
     } catch (error) {
-        showAlert(`Similarity calculation failed: ${error.message}`, 'danger');
+        showAlert(`Similarity search failed: ${error.message}`, 'danger');
     } finally {
         hideLoading();
     }
@@ -243,12 +308,13 @@ async function calculateSimilarity() {
 
 function displaySimilarityResults(response) {
     const resultsContainer = document.getElementById('similarityResults');
-    
+
     if (!response.results || response.results.length === 0) {
         resultsContainer.innerHTML = `
             <div class="alert alert-info">
                 <i class="fas fa-info-circle me-2"></i>
-                No molecules above the similarity threshold
+                <strong>No similar compounds found</strong>
+                <p class="mb-0">Try lowering the similarity threshold or checking different compounds.</p>
             </div>
         `;
         return;
@@ -256,31 +322,53 @@ function displaySimilarityResults(response) {
 
     let html = `
         <div class="fade-in">
-            <div class="mb-3">
-                <strong>Query:</strong> <span class="smiles-text">${response.query_smiles}</span>
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle me-2"></i>
+                <strong>Search Complete!</strong>
             </div>
             <div class="mb-3">
-                <small class="text-muted">
-                    Found ${response.above_threshold} of ${response.total_comparisons} molecules above threshold
-                </small>
+                <strong>Your Compound:</strong> 
+                <span class="smiles-text">${response.query_smiles}</span>
+            </div>
+            <div class="mb-3">
+                <div class="row">
+                    <div class="col-6">
+                        <small class="text-muted">
+                            <i class="fas fa-chart-bar me-1"></i>
+                            Found: ${response.above_threshold} similar
+                        </small>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">
+                            <i class="fas fa-search me-1"></i>
+                            Searched: ${response.total_comparisons} compounds
+                        </small>
+                    </div>
+                </div>
             </div>
             <div class="results-container">
     `;
 
     response.results.forEach((result, index) => {
-        const scoreColor = result.similarity_score > 0.7 ? 'text-success' : 
-                          result.similarity_score > 0.5 ? 'text-warning' : 'text-danger';
-        
+        const scoreColor = result.similarity_score > 0.7 ? 'text-success' :
+                          result.similarity_score > 0.5 ? 'text-warning' : 'text-info';
+        const scorePercent = (result.similarity_score * 100).toFixed(1);
+
         html += `
             <div class="similarity-result">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <div><span class="smiles-text">${result.target_smiles}</span></div>
-                        <small class="text-muted">${response.metric} similarity</small>
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div class="flex-grow-1">
+                        <div class="fw-bold">Match #${index + 1}</div>
+                        <div class="smiles-text small">${result.target_smiles}</div>
                     </div>
-                    <div class="similarity-score ${scoreColor}">
-                        ${(result.similarity_score * 100).toFixed(1)}%
+                    <div class="text-end">
+                        <div class="similarity-score ${scoreColor} fw-bold">${scorePercent}%</div>
+                        <small class="text-muted">${response.metric}</small>
                     </div>
+                </div>
+                <div class="progress" style="height: 8px;">
+                    <div class="progress-bar ${scoreColor.replace('text-', 'bg-')}" 
+                         style="width: ${scorePercent}%"></div>
                 </div>
             </div>
         `;
@@ -302,41 +390,53 @@ function addOptimizationTarget() {
 
     const target = { property, value };
     optimizationTargets.push(target);
-    
+
     updateOptimizationTargetsDisplay();
-    
+
     // Clear inputs
     document.getElementById('targetValue').value = '';
+
+    showAlert('Target added! Add more targets or start optimization.', 'success');
 }
 
 function removeOptimizationTarget(index) {
     optimizationTargets.splice(index, 1);
     updateOptimizationTargetsDisplay();
+    showAlert('Target removed.', 'info');
 }
 
 function updateOptimizationTargetsDisplay() {
     const container = document.getElementById('optimizationTargets');
-    
+
     if (optimizationTargets.length === 0) {
-        container.innerHTML = '<p class="text-muted">No targets added yet</p>';
+        container.innerHTML = `
+            <div class="text-muted">
+                <i class="fas fa-info-circle me-2"></i>
+                Add targets above to tell AI what to optimize for.
+            </div>
+        `;
         return;
     }
 
-    let html = '';
+    let html = '<div class="alert alert-light">Your optimization targets:</div>';
     optimizationTargets.forEach((target, index) => {
         html += `
             <div class="target-item">
-                <div>
-                    <span class="target-property">${formatProperty(target.property)}</span>:
-                    <span class="target-value">${target.value}</span>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="fw-bold">${formatProperty(target.property)}</span>
+                        <span class="text-muted">→</span>
+                        <span class="target-value">${target.value}</span>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-danger" 
+                            onclick="removeOptimizationTarget(${index})">
+                        <i class="fas fa-times"></i>
+                    </button>
                 </div>
-                <span class="remove-target" onclick="removeOptimizationTarget(${index})">
-                    <i class="fas fa-times"></i>
-                </span>
             </div>
         `;
     });
-    
+
     container.innerHTML = html;
 }
 
@@ -347,6 +447,7 @@ function addOptimizationExample() {
         { property: 'molecular_weight', value: 300 }
     ];
     updateOptimizationTargetsDisplay();
+    showAlert('Example loaded! Click "Start Optimization" to begin.', 'success');
 }
 
 async function startOptimization() {
@@ -354,7 +455,7 @@ async function startOptimization() {
     const maxIterations = parseInt(document.getElementById('maxIterations').value);
 
     if (!startingSmiles) {
-        showAlert('Please enter a starting SMILES string', 'warning');
+        showAlert('Please enter a starting compound structure (SMILES)', 'warning');
         return;
     }
 
@@ -383,6 +484,7 @@ async function startOptimization() {
         });
 
         displayOptimizationResults(response);
+        showAlert('Optimization started! This may take 10-30 minutes.', 'success');
     } catch (error) {
         showAlert(`Optimization failed: ${error.message}`, 'danger');
     } finally {
@@ -393,11 +495,15 @@ async function startOptimization() {
 function displayOptimizationResults(response) {
     const resultsContainer = document.getElementById('optimizationResults');
     const statusContainer = document.getElementById('optimizationStatus');
-    
+
     resultsContainer.style.display = 'block';
-    
+
     let html = `
         <div class="fade-in">
+            <div class="alert alert-success">
+                <i class="fas fa-rocket me-2"></i>
+                <strong>Optimization Started!</strong>
+            </div>
             <div class="row">
                 <div class="col-md-6">
                     <h6>Task ID</h6>
@@ -405,14 +511,14 @@ function displayOptimizationResults(response) {
                 </div>
                 <div class="col-md-6">
                     <h6>Status</h6>
-                    <span class="status-badge status-${response.status}">
+                    <span class="badge bg-primary fs-6">
                         ${response.status.toUpperCase()}
                     </span>
                 </div>
             </div>
             <div class="row mt-3">
                 <div class="col-12">
-                    <h6>Starting Molecule</h6>
+                    <h6>Starting Compound</h6>
                     <span class="smiles-text">${response.starting_smiles || 'N/A'}</span>
                 </div>
             </div>
@@ -423,20 +529,22 @@ function displayOptimizationResults(response) {
         html += `
             <div class="row mt-3">
                 <div class="col-12">
-                    <h6>Estimated Completion Time</h6>
-                    <p>${minutes} minutes</p>
+                    <h6>Estimated Time</h6>
+                    <p><i class="fas fa-clock me-2"></i>${minutes} minutes</p>
                 </div>
             </div>
         `;
     }
 
     html += `
-            <div class="mt-3">
-                <small class="text-muted">
-                    <i class="fas fa-info-circle me-1"></i>
-                    Optimization is running in the background. 
-                    Check status at: <span class="font-monospace">/optimization/status/${response.task_id}</span>
-                </small>
+            <div class="alert alert-info mt-3">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>What happens next:</strong>
+                <ul class="mb-0 mt-2">
+                    <li>AI will test different modifications to your compound</li>
+                    <li>You'll get an email when optimization is complete</li>
+                    <li>Or check back later using the task ID above</li>
+                </ul>
             </div>
         </div>
     `;
@@ -480,12 +588,13 @@ async function uploadFile() {
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.detail || `Upload failed with status ${response.status}`);
         }
 
         const result = await response.json();
         displayUploadResults(result);
+        showAlert('File uploaded successfully! Processing your compounds now.', 'success');
     } catch (error) {
         showAlert(`Upload failed: ${error.message}`, 'danger');
     } finally {
@@ -496,10 +605,10 @@ async function uploadFile() {
 function displayUploadResults(response) {
     const resultsContainer = document.getElementById('uploadResults');
     const statusContainer = document.getElementById('uploadStatus');
-    
+
     resultsContainer.style.display = 'block';
-    
-    let html = `
+
+    statusContainer.innerHTML = `
         <div class="fade-in">
             <div class="row">
                 <div class="col-md-6">
@@ -508,14 +617,14 @@ function displayUploadResults(response) {
                 </div>
                 <div class="col-md-6">
                     <h6>Status</h6>
-                    <span class="status-badge status-${response.status}">
+                    <span class="badge bg-primary fs-6">
                         ${response.status.toUpperCase()}
                     </span>
                 </div>
             </div>
             <div class="row mt-3">
                 <div class="col-md-6">
-                    <h6>Filename</h6>
+                    <h6>File Name</h6>
                     <p>${response.filename}</p>
                 </div>
                 <div class="col-md-6">
@@ -523,12 +632,11 @@ function displayUploadResults(response) {
                     <p>${(response.file_size / 1024).toFixed(1)} KB</p>
                 </div>
             </div>
-            <div class="mt-3">
-                <small class="text-muted">
-                    <i class="fas fa-info-circle me-1"></i>
-                    File is being processed. Check status at: 
-                    <span class="font-monospace">${response.polling_url}</span>
-                </small>
+            <div class="alert alert-info mt-3">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Processing your file...</strong>
+                <p class="mb-0">This may take a few minutes depending on the number of compounds. 
+                Use the Upload ID above to check status later.</p>
             </div>
         </div>
     `;
@@ -574,17 +682,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Example inputs
-    const examples = [
-        { smiles: 'CCO', name: 'Ethanol' },
-        { smiles: 'CC(=O)O', name: 'Acetic Acid' },
-        { smiles: 'c1ccccc1', name: 'Benzene' },
-        { smiles: 'CC(C)CC1=CC=C(C=C1)C(C)C(=O)O', name: 'Ibuprofen' },
-        { smiles: 'CN1C=NC2=C1C(=O)N(C(=O)N2C)C', name: 'Caffeine' }
-    ];
-
-    // Add example dropdown (you could implement this)
-    
     // Smooth scrolling for navigation
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function (e) {
@@ -609,6 +706,12 @@ document.addEventListener('DOMContentLoaded', function() {
             this.style.height = this.scrollHeight + 'px';
         });
     });
+
+    // Add helpful tooltips and guidance
+    const helpTooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    helpTooltips.forEach(tooltip => {
+        new bootstrap.Tooltip(tooltip);
+    });
 });
 
 // Export functions for global access
@@ -621,3 +724,4 @@ window.predictProperties = predictProperties;
 window.calculateSimilarity = calculateSimilarity;
 window.startOptimization = startOptimization;
 window.uploadFile = uploadFile;
+window.scrollToSection = scrollToSection;

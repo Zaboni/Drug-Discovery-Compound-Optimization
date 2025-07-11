@@ -98,8 +98,14 @@ class TestHealthEndpoints:
     """Test health check and system status endpoints."""
 
     def test_root_endpoint(self, client):
-        """Test root endpoint returns API information."""
-        response = client.get("/")
+        """Test root endpoint redirects to web interface."""
+        response = client.get("/", follow_redirects=False)
+        assert response.status_code == status.HTTP_302_FOUND
+        assert response.headers["location"] == "/app"
+
+    def test_api_info_endpoint(self, client):
+        """Test API info endpoint returns API information."""
+        response = client.get("/api")
         assert response.status_code == status.HTTP_200_OK
         
         data = response.json()

@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChemAI - AI-Powered Drug Discovery Made Simple</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/frontend/css/styles.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-atom me-2"></i>
+                ChemAI
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#howto">How to Use</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#analyze">Analyze Molecules</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#compare">Compare Compounds</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#improve">Improve Drugs</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#batch">Process Files</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container my-5">
+        <!-- Hero Section -->
+        <div class="row mb-5">
+            <div class="col-12 text-center">
+                <h1 class="display-4 mb-3">🧪 Welcome to ChemAI</h1>
+                <p class="lead mb-4">
+                    Discover promising drug candidates faster with AI. No coding required – just upload your data and get insights in minutes.
+                </p>
+                <div class="alert alert-info mb-4">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    <strong>New to drug discovery AI?</strong> Don't worry! This tool is designed for scientists like you.
+                    Follow our step-by-step guides below to get started.
+                </div>
+            </div>
+        </div>
+
+        <!-- What This Tool Does -->
+        <section id="overview" class="mb-5">
+            <div class="row">
+                <div class="col-12">
+                    <h2 class="mb-4 text-center">What Can ChemAI Do For You?</h2>
+                </div>
+            </div>
+            <div class="row g-4">
+                <div class="col-md-6 col-lg-3">
+                    <div class="card h-100 feature-card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-microscope fa-3x text-primary mb-3"></i>
+                            <h5>Analyze Your Compounds</h5>
+                            <p class="small">Get instant predictions about how your molecules will behave - their toxicity, how well they'll be absorbed, and more.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="card h-100 feature-card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-search fa-3x text-success mb-3"></i>
+                            <h5>Find Similar Drugs</h5>
+                            <p class="small">Discover existing drugs that are similar to your compound. Great for understanding potential effects and side effects.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="card h-100 feature-card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-magic fa-3x text-warning mb-3"></i>
+                            <h5>Improve Your Compounds</h5>
+                            <p class="small">Let AI suggest modifications to make your drug safer, more effective, or easier for the body to process.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="card h-100 feature-card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-file-excel fa-3x text-info mb-3"></i>
+                            <h5>Process Hundreds at Once</h5>
+                            <p class="small">Upload your Excel or CSV files to analyze entire libraries of compounds automatically.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- How to Use Guide -->
+        <section id="howto" class="mb-5">
+            <div class="row">
+                <div class="col-12">
+                    <h2 class="mb-4 text-center">Getting Started - It's Easy!</h2>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-lg-6">
+                                    <h4>What You'll Need:</h4>
+                                    <ul class="list-unstyled">
+                                        <li><i class="fas fa-check text-success me-2"></i>Your compound's structure in SMILES format</li>
+                                        <li><i class="fas fa-check text-success me-2"></i>Or an Excel/CSV file with compound data</li>
+                                        <li><i class="fas fa-check text-success me-2"></i>Just a few minutes of your time</li>
+                                    </ul>
+
+                                    <div class="alert alert-light">
+                                        <h6><i class="fas fa-question-circle me-2"></i>What's a SMILES?</h6>
+                                        <p class="mb-0">SMILES is just a way to write chemical structures as text. For example, water (H₂O) is written as "O", and ethanol is "CCO". Most chemistry software can convert your structures to SMILES format.</p>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6">
+                                    <h4>Three Ways to Use ChemAI:</h4>
+                                    <div class="d-grid gap-2">
+                                        <button class="btn btn-primary btn-lg" onclick="scrollToSection('analyze')">
+                                            <i class="fas fa-flask me-2"></i>Analyze Single Compounds
+                                        </button>
+                                        <button class="btn btn-success btn-lg" onclick="scrollToSection('compare')">
+                                            <i class="fas fa-balance-scale me-2"></i>Compare Multiple Compounds
+                                        </button>
+                                        <button class="btn btn-info btn-lg" onclick="scrollToSection('batch')">
+                                            <i class="fas fa-upload me-2"></i>Upload Data Files
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Analyze Molecules Section -->
+        <section id="analyze" class="mb-5">
+            <div class="row">
+                <div class="col-12">
+                    <h2 class="mb-4"><i class="fas fa-flask me-2"></i>Analyze Your Molecule</h2>
+                    <p class="lead">Enter your compound and get instant predictions about its drug-like properties.</p>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="fas fa-keyboard me-2"></i>Step 1: Enter Your Compound</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="predictionForm">
+                                <div class="mb-3">
+                                    <label for="smilesInput" class="form-label">Compound Structure (SMILES format)</label>
+                                    <input type="text" class="form-control form-control-lg" id="smilesInput"
+                                           placeholder="Example: CCO" required>
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Don't have SMILES? Try our examples below or convert your structure using ChemDraw or similar software.
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">What would you like to predict?</label>
+                                    <div class="alert alert-light small">
+                                        <strong>Tip:</strong> Start with the basic properties (already selected) to get a general overview of your compound.
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="prop_mw" value="molecular_weight" checked>
+                                                <label class="form-check-label" for="prop_mw">
+                                                    <strong>Molecular Weight</strong> - How heavy is your molecule?
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="prop_logp" value="logp" checked>
+                                                <label class="form-check-label" for="prop_logp">
+                                                    <strong>LogP</strong> - How well will it dissolve in fats vs water?
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="prop_tpsa" value="tpsa" checked>
+                                                <label class="form-check-label" for="prop_tpsa">
+                                                    <strong>TPSA</strong> - How easily will it cross cell membranes?
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="prop_hbd" value="num_hbd">
+                                                <label class="form-check-label" for="prop_hbd">
+                                                    <strong>H-bond Donors</strong> - How many hydrogen bonds can it make?
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="prop_hba" value="num_hba">
+                                                <label class="form-check-label" for="prop_hba">
+                                                    <strong>H-bond Acceptors</strong> - How many hydrogen bonds can it accept?
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-primary btn-lg">
+                                        <i class="fas fa-play me-2"></i>Analyze My Compound
+                                    </button>
+                                </div>
+                            </form>
+
+                            <hr>
+                            <h6>Try These Examples:</h6>
+                            <div class="d-grid gap-2">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addExample('CCO')">
+                                    <i class="fas fa-wine-glass me-2"></i>Ethanol (alcohol)
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addExample('CC(=O)O')">
+                                    <i class="fas fa-flask me-2"></i>Acetic Acid (vinegar)
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addExample('CN1C=NC2=C1C(=O)N(C(=O)N2C)C')">
+                                    <i class="fas fa-coffee me-2"></i>Caffeine
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Step 2: View Your Results</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="predictionResults">
+                                <div class="text-center text-muted py-5">
+                                    <i class="fas fa-arrow-left fa-3x mb-3"></i>
+                                    <h5>Ready to analyze!</h5>
+                                    <p>Enter your compound on the left and click "Analyze My Compound" to see predictions here.</p>
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-clock me-2"></i>
+                                        <strong>Analysis takes just a few seconds!</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Compare Compounds Section -->
+        <section id="compare" class="mb-5">
+            <div class="row">
+                <div class="col-12">
+                    <h2 class="mb-4"><i class="fas fa-balance-scale me-2"></i>Compare Multiple Compounds</h2>
+                    <p class="lead">Find out which known drugs are most similar to your compound.</p>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0"><i class="fas fa-search me-2"></i>Step 1: Set Up Your Search</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="similarityForm">
+                                <div class="mb-3">
+                                    <label for="querySmiles" class="form-label">Your Compound (SMILES format)</label>
+                                    <input type="text" class="form-control form-control-lg" id="querySmiles"
+                                           placeholder="Example: c1ccccc1" required>
+                                    <div class="form-text">This is the compound you want to find similar drugs for.</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="targetSmiles" class="form-label">Known Drugs to Compare Against</label>
+                                    <textarea class="form-control" id="targetSmiles" rows="5"
+                                              placeholder="Enter one compound per line..." required></textarea>
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Enter each compound's SMILES on a separate line. Use the example button to see how this works.
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label for="similarityMetric" class="form-label">Comparison Method</label>
+                                        <select class="form-select form-select-lg" id="similarityMetric">
+                                            <option value="tanimoto" selected>Tanimoto (Recommended)</option>
+                                            <option value="dice">Dice</option>
+                                            <option value="cosine">Cosine</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="similarityThreshold" class="form-label">Similarity Threshold</label>
+                                        <select class="form-select form-select-lg" id="similarityThreshold">
+                                            <option value="0.1">Show All (10%+)</option>
+                                            <option value="0.3" selected>Similar (30%+)</option>
+                                            <option value="0.5">Very Similar (50%+)</option>
+                                            <option value="0.7">Highly Similar (70%+)</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <hr>
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-success btn-lg">
+                                        <i class="fas fa-search me-2"></i>Find Similar Compounds
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary" onclick="addSimilarityExample()">
+                                        <i class="fas fa-lightbulb me-2"></i>Try an Example
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0"><i class="fas fa-list-ol me-2"></i>Step 2: Review Similar Compounds</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="similarityResults">
+                                <div class="text-center text-muted py-5">
+                                    <i class="fas fa-arrow-left fa-3x mb-3"></i>
+                                    <h5>Ready to compare!</h5>
+                                    <p>Set up your search on the left to find similar compounds.</p>
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-lightbulb me-2"></i>
+                                        <strong>Tip:</strong> Higher similarity scores mean the compounds are more alike in structure.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Improve Compounds Section -->
+        <section id="improve" class="mb-5">
+            <div class="row">
+                <div class="col-12">
+                    <h2 class="mb-4"><i class="fas fa-magic me-2"></i>Improve Your Drug Candidate</h2>
+                    <p class="lead">Let AI suggest modifications to make your compound safer, more effective, or easier to absorb.</p>
+                </div>
+            </div>
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Important:</strong> This optimization process can take 10-30 minutes depending on complexity.
+                        You'll receive an email when it's complete, or you can check back later.
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="fas fa-cogs me-2"></i>Optimization Settings</h5>
+                </div>
+                <div class="card-body">
+                    <form id="optimizationForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="startingSmiles" class="form-label">Starting Compound (SMILES format)</label>
+                                    <input type="text" class="form-control form-control-lg" id="startingSmiles"
+                                           placeholder="Example: CCO" required>
+                                    <div class="form-text">This is the compound you want to improve.</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="maxIterations" class="form-label">How hard should AI try? (Max attempts)</label>
+                                    <select class="form-select form-select-lg" id="maxIterations">
+                                        <option value="50">Quick (50 attempts - 5 minutes)</option>
+                                        <option value="100" selected>Normal (100 attempts - 10 minutes)</option>
+                                        <option value="200">Thorough (200 attempts - 20 minutes)</option>
+                                        <option value="500">Exhaustive (500 attempts - 30+ minutes)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="targetProperty" class="form-label">What do you want to improve?</label>
+                                <div class="alert alert-light small">
+                                    <strong>How it works:</strong> Tell the AI what values you want for different properties, and it will suggest structural modifications to achieve them.
+                                </div>
+                                <div class="mb-3">
+                                    <div class="row g-2">
+                                        <div class="col-7">
+                                            <label for="targetProperty" class="form-label visually-hidden">Property to optimize</label>
+                                            <select class="form-select" id="targetProperty">
+                                                <option value="molecular_weight">Molecular Weight</option>
+                                                <option value="logp" selected>LogP (Fat/Water Balance)</option>
+                                                <option value="tpsa">TPSA (Membrane Crossing)</option>
+                                                <option value="bioactivity">Bioactivity</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-3">
+                                            <label for="targetValue" class="form-label visually-hidden">Target value</label>
+                                            <input type="number" class="form-control" id="targetValue"
+                                                   placeholder="Target" step="0.1">
+                                        </div>
+                                        <div class="col-2">
+                                            <button type="button" class="btn btn-outline-success w-100" onclick="addOptimizationTarget()">
+                                                <i class="fas fa-plus"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="optimizationTargets" class="mb-3">
+                                    <div class="text-muted">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        Add targets above to tell AI what to optimize for.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-warning btn-lg">
+                                <i class="fas fa-rocket me-2"></i>Start Optimization
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="addOptimizationExample()">
+                                <i class="fas fa-lightbulb me-2"></i>Try an Example
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="mt-4" id="optimizationResults" style="display: none;">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0"><i class="fas fa-hourglass-half me-2"></i>Optimization Progress</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="optimizationStatus">
+                            <!-- Optimization status will be displayed here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- File Upload Section -->
+        <section id="batch" class="mb-5">
+            <div class="row">
+                <div class="col-12">
+                    <h2 class="mb-4"><i class="fas fa-upload me-2"></i>Process Your Data Files</h2>
+                    <p class="lead">Upload Excel or CSV files to analyze hundreds of compounds at once.</p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-file-excel me-2"></i>Upload Your Compound Library</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>File Requirements:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>Excel (.xlsx, .xls) or CSV files only</li>
+                            <li>Maximum file size: 100MB</li>
+                            <li>Must have a column with compound structures in SMILES format</li>
+                            <li>Optionally, include a column with activity/bioactivity data</li>
+                        </ul>
+                    </div>
+
+                    <form id="uploadForm" enctype="multipart/form-data">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="fileUpload" class="form-label">Choose Your File</label>
+                                    <input type="file" class="form-control form-control-lg" id="fileUpload"
+                                           accept=".csv,.xlsx,.xls" required>
+                                    <div class="form-text">
+                                        <i class="fas fa-file-excel me-1"></i>
+                                        Supported: CSV, Excel (.xlsx, .xls) - Max 100MB
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="smilesColumn" class="form-label">SMILES Column Name</label>
+                                    <input type="text" class="form-control" id="smilesColumn"
+                                           value="smiles" placeholder="smiles">
+                                    <div class="form-text">What is your structure column called? (e.g., "smiles", "structure", "compound")</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="targetColumn" class="form-label">Activity Column (Optional)</label>
+                                    <input type="text" class="form-control" id="targetColumn"
+                                           placeholder="activity">
+                                    <div class="form-text">If you have activity data, what is that column called? (e.g., "activity", "bioactivity", "ic50")</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <div class="d-grid gap-2">
+                                        <button type="submit" class="btn btn-info btn-lg">
+                                            <i class="fas fa-cloud-upload-alt me-2"></i>Upload & Process
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+
+                    <div id="uploadResults" style="display: none;">
+                        <hr>
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <strong>File uploaded successfully!</strong> Processing your compounds now...
+                        </div>
+                        <div id="uploadStatus">
+                            <!-- Upload status will be displayed here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Help Section -->
+        <section id="help" class="mb-5 bg-light p-4 rounded">
+            <div class="row">
+                <div class="col-12">
+                    <h2 class="mb-4 text-center"><i class="fas fa-question-circle me-2"></i>Need Help?</h2>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <i class="fas fa-book fa-2x text-primary mb-3"></i>
+                            <h5>Getting Started Guide</h5>
+                            <p>Step-by-step tutorials for beginners</p>
+                            <a href="#howto" class="btn btn-primary">View Guide</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <i class="fas fa-question-circle fa-2x text-success mb-3"></i>
+                            <h5>Common Questions</h5>
+                            <p>FAQ about SMILES, file formats, and results</p>
+                            <a href="/docs" class="btn btn-success" target="_blank">View FAQ</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <i class="fas fa-envelope fa-2x text-info mb-3"></i>
+                            <h5>Contact Support</h5>
+                            <p>Get help from our scientific team</p>
+                            <a href="mailto:support@chemai.com" class="btn btn-info">Email Us</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>ChemAI - AI-Powered Drug Discovery</h6>
+                    <p class="small mb-0">Making drug discovery AI accessible to all scientists</p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <a href="/docs" class="text-white-50 me-3">Documentation</a>
+                    <a href="/health" class="text-white-50 me-3">System Status</a>
+                    <a href="mailto:support@chemai.com" class="text-white-50">Support</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Loading Modal -->
+    <div class="modal fade" id="loadingModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body text-center py-4">
+                    <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <h5>Processing Your Request...</h5>
+                    <p class="mb-0">This may take a few moments. Please don't close this window.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/frontend/js/app.js"></script>
+</body>
+</html>
