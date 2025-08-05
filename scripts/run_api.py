@@ -19,8 +19,7 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 try:
-    import uvicorn
-    from src.api import app, FASTAPI_AVAILABLE
+    from src.api_frontend import app, api_instance, FASTAPI_AVAILABLE
     from src.logging_config import setup_logging
 except ImportError as e:
     print(f"Import error: {e}")
@@ -286,7 +285,7 @@ def run_server(args, config):
     
     # Prepare uvicorn configuration
     uvicorn_config = {
-        "app": "src.api:app",
+        "app": "src.api_frontend:app",
         "host": host,
         "port": port,
         "log_level": args.log_level.lower(),
@@ -335,6 +334,8 @@ def run_server(args, config):
     print("Press CTRL+C to quit")
     
     try:
+        # Import uvicorn here to avoid import errors
+        import uvicorn
         # Start server
         uvicorn.run(**uvicorn_config)
     except KeyboardInterrupt:

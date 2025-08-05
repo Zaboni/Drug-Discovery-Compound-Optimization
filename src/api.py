@@ -118,6 +118,24 @@ except ImportError:
     validate_smiles = None
     calculate_similarity = None
 
+    # Fallback API model classes
+    class SMILESInput(BaseModel if FASTAPI_AVAILABLE else object):
+        smiles: str = ""
+    class BatchSMILESInput(BaseModel if FASTAPI_AVAILABLE else object):
+        smiles_list: list = []
+    class PropertyPredictionRequest(BaseModel if FASTAPI_AVAILABLE else object):
+        smiles: list = []
+        properties: list = []
+    class SimilarityRequest(BaseModel if FASTAPI_AVAILABLE else object):
+        query_smiles: str = ""
+        target_smiles: list = []
+        similarity_metric: str = "tanimoto"
+        threshold: float = 0.0
+        top_k: int = None
+    class OptimizationRequest(BaseModel if FASTAPI_AVAILABLE else object):
+        starting_smiles: str = ""
+        targets: list = []
+        max_iterations: int = 100
 logger = logging.getLogger(__name__)
 
 # Global configuration
@@ -519,44 +537,45 @@ if FASTAPI_AVAILABLE:
         health_data["components"] = components
         return health_data
 
-    # SMILES Validation Endpoints
+    # SMILES Validation Endpoints (using JSON request bodies instead of Pydantic models)
     @app.post("/validate_smiles", tags=["Validation"])
-    async def validate_smiles_endpoint(smiles_input: SMILESInput):
-        """Validate a single SMILES string."""
-        try:
-            if not api_instance.data_processor:
-                raise HTTPException(status_code=503, detail="Data processor not available")
-
-            processed = api_instance.data_processor.process_smiles([smiles_input.smiles])
-            result = processed[0] if processed else {"valid": False}
-
-            return {
-                "smiles": smiles_input.smiles,
+    async def validate_smiles_endpoint(request: Request):
                 "valid": result.get("valid", False),
                 "canonical_smiles": result.get("canonical_smiles"),
                 "message": "Valid SMILES" if result.get("valid") else "Invalid SMILES"
             }
+        except HTTPException:
+            raise
         except Exception as e:
             logger.error(f"Error validating SMILES: {e}")
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.post("/validate_smiles/batch", tags=["Validation"])
-    async def validate_smiles_batch(batch_input: BatchSMILESInput):
+    async def validate_smiles_batch(request: Request):
         """Validate multiple SMILES strings."""
         try:
+            # Get SMILES list from request body
+            try:
+                body = await request.json()
+                smiles_list = body.get('smiles_list', [])
+                if not smiles_list:
+                    raise HTTPException(status_code=400, detail="Missing 'smiles_list' field in request body")
+            except Exception:
+                raise HTTPException(status_code=400, detail="Invalid JSON in request body")
+
             if not api_instance.data_processor:
                 raise HTTPException(status_code=503, detail="Data processor not available")
 
-            if len(batch_input.smiles_list) > API_CONFIG['max_batch_size']:
+            if len(smiles_list) > API_CONFIG['max_batch_size']:
                 raise HTTPException(
                     status_code=400,
                     detail=f"Batch size exceeds maximum of {API_CONFIG['max_batch_size']}"
                 )
 
-            processed = api_instance.data_processor.process_smiles(batch_input.smiles_list)
+            processed = api_instance.data_processor.process_smiles(smiles_list)
 
             results = []
-            for i, smiles in enumerate(batch_input.smiles_list):
+            for i, smiles in enumerate(smiles_list):
                 result = processed[i] if i < len(processed) else {"valid": False}
                 results.append({
                     "smiles": smiles,
@@ -567,7 +586,42 @@ if FASTAPI_AVAILABLE:
 
             return {
                 "results": results,
-                "total_molecules": len(batch_input.smiles_list),
+                "total_molecules": len(smiles_list),
+                "valid_molecules": sum(1 for r in results if r["valid"]),
+                "invalid_molecules": sum(1 for r in results if not r["valid"])
+            }
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Error validating SMILES batch: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    # Property Prediction Endpoints
+    @app.post("/predict_properties", tags=["Prediction"])
+    async def predict_properties(request: Request):
+        """Predict molecular properties for single or multiple molecules."""
+        try:
+            # Parse request body
+            try:
+                body = await request.json()
+                smiles = body.get('smiles', [])
+                properties = body.get('properties', ['molecular_weight', 'logp', 'tpsa'])
+
+                # Ensure smiles is a list
+                if isinstance(smiles, str):
+                    smiles = [smiles]
+                if not smiles:
+                    raise HTTPException(status_code=400, detail="Missing 'smiles' field in request body")
+            except Exception:
+                raise HTTPException(status_code=400, detail="Invalid JSON in request body")
+                    "valid": result.get("valid", False),
+                    "canonical_smiles": result.get("canonical_smiles"),
+                    "message": "Valid SMILES" if result.get("valid") else "Invalid SMILES"
+                })
+
+            return {
+                "results": results,
+                "total_molecules": len(smiles_list),
                 "valid_molecules": sum(1 for r in results if r["valid"]),
                 "invalid_molecules": sum(1 for r in results if not r["valid"])
             }

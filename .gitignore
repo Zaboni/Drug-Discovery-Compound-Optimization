@@ -3,3 +3,6 @@ data/cache/fingerprints_86892064.pkl
 data/cache/fingerprints_4676e12f.pkl
 data/cache/descriptors_547aeb67.pkl
 data/cache/descriptors_4676e12f.pkl
+/logs
+*.pyc
+/logs

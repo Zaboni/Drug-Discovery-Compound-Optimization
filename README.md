@@ -114,12 +114,12 @@ Drug-Discovery-Compound-Optimization/
 │   ├── checkpoints/                 # Model checkpoints
 │   └── saved/                       # Saved trained models
 │
-├── static/                          # Static web assets
+├── frontend/                       
 │   ├── css/                         # Stylesheets
 │   ├── js/                          # JavaScript files
-│   └── images/                      # Image assets
+│   └── Templates/                      # Html templates
 │
-├── templates/                       # HTML templates
+
 │
 ├── docs/                            # Project documentation
 │
