@@ -843,7 +843,6 @@ if FASTAPI_AVAILABLE:
         return task_info
 
     # File Upload Endpoints
-    # File Upload Endpoints
     @app.post("/upload/molecules", tags=["Upload"])
     async def upload_molecule_file(
         file: UploadFile = File(...),

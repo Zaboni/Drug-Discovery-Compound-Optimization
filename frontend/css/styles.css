@@ -21,7 +21,8 @@
 /* Global Styles */
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f8f9fa;
+    background-color: white !important;
+    color: black !important;
     line-height: 1.6;
 }
 .container {
@@ -497,7 +498,7 @@ footer a:hover {
 }
 
 /* Dark mode support (optional) */
-@media (prefers-color-scheme: dark) {
+@media (prefers-color-scheme: light) {
     :root {
         --bg-color: #1a1d29;
         --card-bg: #252a3d;
@@ -505,7 +506,7 @@ footer a:hover {
     }
     
     body {
-        background-color: var(--bg-color);
+        background-color: #ffffff;
         color: var(--text-color);
     }
     
@@ -538,5 +539,34 @@ footer a:hover {
     
     body {
         background: white !important;
+    }
+}
+
+/* FORCE WHITE BACKGROUND AND BLACK TEXT EVERYWHERE */
+* {
+    background-color: white !important;
+    color: black !important;
+}
+
+.navbar,
+.card-header,
+.btn,
+.alert,
+footer,
+.bg-primary,
+.bg-success,
+.bg-warning,
+.bg-info,
+.bg-dark,
+.bg-light {
+    background-color: white !important;
+    color: black !important;
+}
+
+/* Override dark mode */
+@media (prefers-color-scheme: dark) {
+    * {
+        background-color: white !important;
+        color: black !important;
     }
 }

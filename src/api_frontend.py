@@ -220,70 +220,61 @@ if FASTAPI_AVAILABLE:
     <title>ChemAI - Drug Discovery API</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background: white; color: black; font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .card { border: 1px solid #ccc; margin: 20px 0; padding: 20px; background: white; }
+        .card-header { border-bottom: 1px solid #ccc; margin-bottom: 15px; font-weight: bold; }
+        input, button { padding: 10px; margin: 5px; border: 1px solid #ccc; background: white; color: black; }
+        button { cursor: pointer; }
+        button:hover { background: #f0f0f0; }
+        .alert { border: 1px solid #ccc; padding: 10px; margin: 10px 0; background: #f9f9f9; }
+        h1, h5 { color: black; }
+        nav { border-bottom: 1px solid #ccc; padding: 10px 0; margin-bottom: 20px; }
+    </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <nav>
         <div class="container">
-            <a class="navbar-brand" href="#">
-                <i class="fas fa-atom me-2"></i>
-                ChemAI - Drug Discovery
-            </a>
+            <strong>ChemAI - Drug Discovery</strong>
         </div>
     </nav>
     
-    <div class="container mt-5">
-        <div class="row justify-content-center">
-            <div class="col-md-10">
-                <div class="text-center mb-5">
-                    <h1 class="display-4 mb-3">🧪 Welcome to ChemAI</h1>
-                    <p class="lead">AI-Powered Drug Discovery Made Simple</p>
-                </div>
-                
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-header bg-primary text-white">
-                                <h5 class="mb-0"><i class="fas fa-flask me-2"></i>Test SMILES Validation</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="mb-3">
-                                    <label for="smilesInput" class="form-label">Enter SMILES:</label>
-                                    <input type="text" id="smilesInput" class="form-control" placeholder="CCO" value="CCO">
-                                </div>
-                                <button onclick="validateSmiles()" class="btn btn-primary">Validate</button>
-                                <div id="validationResult" class="mt-3"></div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-header bg-success text-white">
-                                <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Property Prediction</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="mb-3">
-                                    <label for="predSmiles" class="form-label">Compound SMILES:</label>
-                                    <input type="text" id="predSmiles" class="form-control" placeholder="CCO" value="CCO">
-                                </div>
-                                <button onclick="predictProperties()" class="btn btn-success">Predict Properties</button>
-                                <div id="predictionResult" class="mt-3"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="row mt-4">
-                    <div class="col-12 text-center">
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-center">
-                            <a href="/docs" class="btn btn-primary btn-lg">📚 API Documentation</a>
-                            <a href="/health" class="btn btn-outline-primary btn-lg">💚 Health Check</a>
-                        </div>
+    <div class="container">
+        <div class="text-center">
+            <h1>Welcome to ChemAI</h1>
+            <p>AI-Powered Drug Discovery Made Simple</p>
+        </div>
+        
+        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 300px;">
+                <div class="card">
+                    <div class="card-header">Test SMILES Validation</div>
+                    <div>
+                        <label>Enter SMILES:</label><br>
+                        <input type="text" id="smilesInput" placeholder="CCO" value="CCO" style="width: 100%;">
+                        <button onclick="validateSmiles()">Validate</button>
+                        <div id="validationResult"></div>
                     </div>
                 </div>
             </div>
+            
+            <div style="flex: 1; min-width: 300px;">
+                <div class="card">
+                    <div class="card-header">Property Prediction</div>
+                    <div>
+                        <label>Compound SMILES:</label><br>
+                        <input type="text" id="predSmiles" placeholder="CCO" value="CCO" style="width: 100%;">
+                        <button onclick="predictProperties()">Predict Properties</button>
+                        <div id="predictionResult"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px;">
+            <a href="/docs" style="color: black; text-decoration: none; border: 1px solid #ccc; padding: 10px 20px; margin: 10px;">API Documentation</a>
+            <a href="/health" style="color: black; text-decoration: none; border: 1px solid #ccc; padding: 10px 20px; margin: 10px;">Health Check</a>
         </div>
     </div>
     
